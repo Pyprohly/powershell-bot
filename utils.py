@@ -6,7 +6,7 @@ from schema import get_connection
 
 def submission_reply(submission, flags):
 	message = None
-	if flags & MatchBank.missing_code_block_after_backtick_strip:
+	if flags & MatchBank.inline_code_misuse:
 		message = messages[MessageBank.inline_code_misuse]()
 	elif flags & MatchBank.missing_code_block:
 		message = messages[MessageBank.code_block_needed]()

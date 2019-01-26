@@ -45,11 +45,12 @@ class RegexHolder:
 			r'|\$[a-z_][a-z0-9_]* *[=\|]'
 			r')'), re.I | re.M)
 
-	inline_code_lines = re.compile(r'^[\t ]*`(.*)`[\t ]*$', re.M)
+	inline_code_lines = re.compile(r'^ {0,3}`(.*)`[\t ]*$', re.M)
+	consecutive_inline_code_lines = re.compile(r'^ {0,3}`(.*)`[\t ]*\n\n?`.*\n\n?`', re.M)
 
 class MatchBank(IntEnum):
 	missing_code_block = 1
-	missing_code_block_after_backtick_strip = 2
+	inline_code_misuse = 2
 
 @MatchRule.create(
 		MatchBank.missing_code_block.name,
@@ -58,14 +59,20 @@ def missing_code_block_rule(text):
 	return bool(RegexHolder.missing_code_block.search(text))
 
 @MatchRule.create(
-		MatchBank.missing_code_block_after_backtick_strip.name,
-		MatchBank.missing_code_block_after_backtick_strip.value)
-def missing_code_block_after_inline_strip_rule(text):
+		MatchBank.inline_code_misuse.name,
+		MatchBank.inline_code_misuse.value)
+def missing_code_block_after_backtick_strip(text):
+	if not RegexHolder.consecutive_inline_code_lines.search(text):
+		# Avoid cases like t3_abqs9c
+		return False
+
 	new_text, n = RegexHolder.inline_code_lines.subn(r'\1', text)
 	if n <= 2:
+		# Ignore if it's just two lines
 		return False
+
 	return bool(RegexHolder.missing_code_block.search(new_text))
 
 match_control = MatchControl()
 match_control.add(missing_code_block_rule)
-match_control.add(missing_code_block_after_inline_strip_rule)
+match_control.add(missing_code_block_after_backtick_strip)
