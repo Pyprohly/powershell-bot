@@ -6,6 +6,7 @@ ___*
 config.py
 .git.bak/
 *~
+log/
 
 ## https://github.com/github/gitignore/blob/master/Python.gitignore
 
