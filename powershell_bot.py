@@ -78,18 +78,18 @@ def main():
 				seen_deque.append(submission.id)
 
 				if not submission.is_self:
-					logger.debug('Skip: link submission: {}'.format(submission.permalink))
+					logger.info('Skip: link submission: {}'.format(submission.permalink))
 					continue
 
 				# Rough check to see if bot hasn't replied already
 				submission.comments.replace_more(limit=0)
 				if any(1 for comment in submission.comments if comment.author == me):
-					logger.debug('Skip: already replied to: {}'.format(submission.permalink))
+					logger.warning('Skip: already replied to: {}'.format(submission.permalink))
 					continue
 
 				b = match_control.check_all(submission.selftext)
 				if b == 0:
-					logger.debug('Skip: no match: {}'.format(submission.permalink))
+					logger.info('Skip: no match: {}'.format(submission.permalink))
 					continue
 
 				if reply_shear.enabled:
