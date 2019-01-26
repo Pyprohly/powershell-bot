@@ -39,15 +39,6 @@ def main():
 
 		logger.info('Log ({}): {}'.format(logger.name, log_file.absolute()))
 
-	# A fail-safe stop mechanism in case the bot produces comments too quickly.
-	reply_shear = SimpleNamespace(**{
-		'enabled': True,
-		'pitch': 0,
-		'threshold': 4,
-		'distance': 60 * 60, # i.e., hourly
-		'focus': time.time()
-	})
-
 	reddit = praw.Reddit(**{k: v for k, v in praw_config.items() if v is not None})
 	if reddit.read_only:
 		raise RuntimeError('a read-write reddit instance is required')
@@ -55,7 +46,7 @@ def main():
 	subreddit = reddit.subreddit('+'.join(register['target_subreddits']))
 
 	start_time = time.time()
-	check_time =  start_time
+	check_time = start_time
 	seen_deque = deque(maxlen=100)
 	control_checkpoint_progression = lambda d: max(0, .5*(d - 10))
 
@@ -92,28 +83,10 @@ def main():
 					logger.info('Skip: no match: {}'.format(submission.permalink))
 					continue
 
-				if reply_shear.enabled:
-					if reply_shear.pitch > 0:
-						time_time = time.time()
-						while time_time - reply_shear.focus > reply_shear.distance:
-							reply_shear.pitch -= 1
-							reply_shear.focus += reply_shear.distance
-
-						if reply_shear.pitch > reply_shear.threshold:
-							logger.error('Quit: bot made too many responses over time')
-							raise SystemExit(1)
-
 				logger.info('Match (by /u/{}): {}'.format(submission.author.name, submission.permalink))
-
 
 				reply = submission_reply(submission, b)
 				record_submission_reply(submission, reply, b)
-
-
-				if reply_shear.enabled:
-					if reply_shear.pitch == 0:
-						reply_shear.focus = time.time()
-					reply_shear.pitch += 1
 
 		except (praw.exceptions.PRAWException, prawcore.exceptions.PrawcoreException) as e:
 			if isinstance(e, praw.exceptions.APIException):
