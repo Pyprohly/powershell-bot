@@ -111,22 +111,22 @@ def main():
 			logger.error('Exception: unhandled exception:', exc_info=True)
 
 register = {
-	'name': 'BatchBot',
+	'name': 'PowerShell-Bot',
 	'author': 'Pyprohly',
 	'owner': 'Pyprohly',
 	'version': None,
 	'description': __doc__,
 	'license': 'MIT License',
-	'target_subreddits': ['Pyprohly_test3']
+	'target_subreddits': ['PowerShell']
 }
 
 praw_config = {
-	'site_name': 'BatchBot',
+	'site_name': None,
 	'client_id': None,
 	'client_secret': None,
-	'username': 'BatchBot',
+	'username': 'PowerShell-Bot',
 	'password': None,
-	'user_agent': 'BatchBot by /u/Pyprohly'
+	'user_agent': 'PowerShell-Bot by /u/Pyprohly'
 }
 
 try:
