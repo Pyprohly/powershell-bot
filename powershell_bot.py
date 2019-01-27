@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Tells redditors in /r/Batch to wrap their code in a code block."""
+"""Tells redditors in /r/PowerShell to wrap their code in a code block."""
 
 if __name__ == '__main__':
 	import os
@@ -10,10 +10,11 @@ if __name__ == '__main__':
 	from pathlib import Path
 	import praw, prawcore
 
+	import re
 	from types import SimpleNamespace
 
 	from regex_checks import MatchBank, match_control
-	from utils import submission_reply, record_submission_reply
+	from utils import get_message, record_submission_reply
 
 def main():
 	script_path = Path(__file__).resolve()
@@ -39,6 +40,11 @@ def main():
 
 		logger.info('Log ({}): {}'.format(logger.name, log_file.absolute()))
 
+	delete_command_pattern = r'^!delete +(\w{1,12})$'
+	delete_regexp = re.compile(delete_command_pattern, re.I)
+
+	ignore_inbox_items_older_than = 60 * 2
+
 	reddit = praw.Reddit(**{k: v for k, v in praw_config.items() if v is not None})
 	if reddit.read_only:
 		raise RuntimeError('a read-write reddit instance is required')
@@ -46,27 +52,28 @@ def main():
 	subreddit = reddit.subreddit('+'.join(register['target_subreddits']))
 
 	start_time = time.time()
-	check_time = start_time
-	seen_deque = deque(maxlen=100)
+	__ = ['submission', 'inbox']
+	check_time = dict.fromkeys(__, start_time)
+	seen_deque = dict.fromkeys(__, deque(maxlen=100))
 	control_checkpoint_progression = lambda d: max(0, .5*(d - 10))
 
 	while 1:
 		try:
-			for submission in subreddit.stream.submissions(pause_after=None):
+			for submission in subreddit.stream.submissions(pause_after=-1):
 				if submission is None:
-					continue
+					break
 
-				if submission.id in seen_deque:
+				if submission.id in seen_deque['submission']:
 					logger.debug('Skip: seen item: {}'.format(submission.id))
 					continue
-				if submission.created_utc < check_time:
+				if submission.created_utc < check_time['submission']:
 					if submission.created_utc < start_time:
 						logger.debug('Skip: item was submitted before bot started: {}'.format(submission.id))
 					else:
 						logger.debug('Skip: item was seen or timestamp was supplanted: {}'.format(submission.id))
 					continue
-				check_time += control_checkpoint_progression(submission.created_utc - check_time)
-				seen_deque.append(submission.id)
+				check_time['submission'] += control_checkpoint_progression(submission.created_utc - check_time['submission'])
+				seen_deque['submission'].append(submission.id)
 
 				if not submission.is_self:
 					logger.info('Skip: link submission: {}'.format(submission.permalink))
@@ -83,10 +90,76 @@ def main():
 					logger.info('Skip: no match: {}'.format(submission.permalink))
 					continue
 
-				logger.info('Match (by /u/{}): {}'.format(submission.author.name, submission.permalink))
+				logger.info('Process submission: {}'.format(submission.permalink))
 
-				reply = submission_reply(submission, b)
+				message = get_message(b,
+						signature=1,
+						passed=False,
+						thing_kind=type(submission).__name__)
+				reply = submission.reply(message)
 				record_submission_reply(submission, reply, b)
+
+				message = get_message(b,
+						signature=2,
+						passed=False,
+						thing_kind=type(submission).__name__,
+						redditor=submission.author.name,
+						bot_name=me.name,
+						reply_id=reply.id)
+				reply.edit(message)
+
+			for item in reddit.inbox.stream(pause_after=-1):
+				if item is None:
+					break
+
+				if item.id in seen_deque['inbox']:
+					logger.debug('Skip: seen item: {}'.format(item.id))
+					continue
+				if item.created_utc < check_time['inbox']:
+					if item.created_utc < start_time:
+						logger.debug('Skip: item was submitted before bot started: {}'.format(item.id))
+					else:
+						logger.debug('Skip: item was seen or timestamp was supplanted: {}'.format(item.id))
+					continue
+				check_time['inbox'] += control_checkpoint_progression(item.created_utc - check_time['inbox'])
+				seen_deque['inbox'].append(item.id)
+
+				if item.was_comment:
+					logger.info('Skip: ignore non-`Message` item: {}'.format(item.id))
+					continue
+
+				if time.time() - item.created_utc > ignore_inbox_items_older_than:
+					logger.info('Skip: {0} is older than {1} seconds'.format(type(item).__name__, ignore_inbox_items_older_than))
+					continue
+
+				match = delete_regexp.match(item.subject)
+				if not match:
+					logger.info('Skip: no match (subject line): {}'.format(item.id))
+					continue
+
+				logger.info('Process inbox item (by /u/{}): {}'.format(item.author.name, item.id))
+
+				item.mark_read()
+
+				comment_id = match.group(1)
+				comment = reddit.comment(comment_id)
+				try:
+					comment.refresh()
+				except praw.exceptions.PRAWException:
+					logger.info('Ignore: not found: {}'.format(comment_id))
+					continue
+
+				if comment.author != me:
+					logger.info('Ignore: not owned: {}'.format(comment.permalink))
+					continue
+
+				if len(comment.replies):
+					logger.info('Ignore: has replies: {}'.format(comment.permalink))
+					continue
+
+				comment.delete()
+
+				logger.info('Success: deleted: {}'.format(comment.permalink))
 
 		except (praw.exceptions.PRAWException, prawcore.exceptions.PrawcoreException) as e:
 			if isinstance(e, praw.exceptions.APIException):

@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 
-"""Delete a reply message when the redditor fixes their post."""
+"""Update a reply message appropriately when the redditor changes their post."""
 
 import os
 import time
 import logging, logging.handlers
 from pathlib import Path
+from types import SimpleNamespace
 import praw, prawcore
+
 from schema import get_connection
 from regex_checks import MatchBank, match_control
 from config import praw_config
+from utils import get_message
 
 def main():
 	script_path = Path(__file__).resolve()
@@ -36,74 +39,76 @@ def main():
 		logger.info('Log ({}): {}'.format(logger.name, log_file.absolute()))
 
 	reddit = praw.Reddit(**praw_config)
+	me = reddit.user.me()
 
 	sleep_seconds = 30
 
 	forget_after = 60 * 60 * 24 * 10 # 10 days
 
-	revisit_sql = '''SELECT *
-	FROM t3_reply
-	WHERE is_set = 1 AND is_obstructed = 0
-			AND (strftime('%s', 'now') - target_created_utc) <= {}
-	'''.format(forget_after)
+	sql = SimpleNamespace()
+	sql.is_set_0 = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
+	sql.is_obstructed_1 = 'UPDATE t3_reply SET is_obstructed=1 WHERE target_id=?'
+	sql.is_satisfied_1 = 'UPDATE t3_reply SET is_satisfied=1 WHERE target_id=?'
+	sql.revisit = '''SELECT *
+FROM t3_reply
+WHERE is_set = 1 AND is_obstructed = 0 AND is_satisfied = 0
+		AND (strftime('%s', 'now') - target_created) <= {}
+'''.format(forget_after)
 	db = get_connection()
 
 	while 1:
 		try:
-			c = db.execute(revisit_sql)
+			c = db.execute(sql.revisit)
 			for row in c:
 				target_id = row['target_id']
 				reply_id = row['reply_id']
-				content_flags = row['content_flags']
+				topic_flags = row['topic_flags']
 
 				submission = reddit.submission(target_id)
 				try:
 					submission._fetch()
 				except prawcore.exceptions.NotFound:
 					# This should never happen, even if the submission was deleted.
+					# Avoid processing it in future.
 					logger.warning('Skip: recorded submission not found: {}'.format(target_id))
 
 					with db:
-						sql = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
-						db.execute(sql, (target_id,))
+						db.execute(sql.is_set_0, (target_id,))
 					continue
 
 				b = match_control.check_all(submission.selftext)
 				if b == 0:
 					# The author has fixed their post. Success!
 
-					comment = reddit.comment(reply_id)
-
+					my_comment = reddit.comment(reply_id)
 					try:
-						comment.refresh()
+						my_comment.refresh()
 					except praw.exceptions.PRAWException:
-						# The comment has disappeared. It may have been deleted
+						# The comment has disappeared. It may have been deleted.
 						with db:
-							sql = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
-							db.execute(sql, (target_id,))
+							db.execute(sql.is_set_0, (target_id,))
 						continue
 
-					if len(comment.replies):
-						# Don't delete the comment if there are replies
+					if len(my_comment.replies):
+						# Don't do anything to the comment if there are replies.
 						logger.info(f'Skip: found replies on comment `{reply_id}`')
 
 						with db:
-							sql = 'UPDATE t3_reply SET is_obstructed=1 WHERE target_id=?'
-							db.execute(sql, (target_id,))
+							db.execute(sql.is_obstructed_1, (target_id,))
 					else:
-						comment.delete()
+						message = get_message(topic_flags,
+								signature=2,
+								passed=True,
+								thing_kind=type(submission).__name__,
+								redditor=submission.author.name,
+								bot_name=me.name,
+								reply_id=my_comment.id)
+						my_comment.edit(message)
 
 						with db:
-							sql = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
-							db.execute(sql, (target_id,))
+							db.execute(sql.is_satisfied_1, (target_id,))
 
-						logger.info(f'Success: deleted comment `{reply_id}`')
-
-				else:
-					if b != content_flags:
-						with db:
-							sql = 'UPDATE t3_reply SET content_flags=? WHERE target_id=?'
-							db.execute(sql, (b, target_id))
+						logger.info(f'Success: process comment `{reply_id}`')
 
 			time.sleep(sleep_seconds)
 

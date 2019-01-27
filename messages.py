@@ -1,6 +1,7 @@
 
 from enum import Enum, auto
 from string import Template
+from urllib.parse import urlencode
 
 class MessageRegister:
 	def __init__(self, dispatch_table=None):
@@ -24,32 +25,111 @@ class MessageBank(Enum):
 	code_block_needed = auto()
 	inline_code_misuse = auto()
 
-class MessageStorage:
+class MessageInventory:
 	code_block = '''Looks like your PowerShell code isn’t wrapped in a code block.
 
 To format code correctly on **new.reddit.com**, highlight the code and select *‘Code Block’* in the editing toolbar.
 
 If you’re on **old.reddit.com**, separate the code from your text with a blank line and precede each line of code with **4 spaces** or a **tab**.
-
----
-
-^(*Beep-boop. I am a bot.*)
 '''
 
 	inline_code = '''Looks like you used *inline code* formatting where a **code block** should have been used.
 
 The inline code text styling is for use in paragraphs of text. For larger sequences of code, consider using a code bock. This can be done by selecting your code then clicking the *‘Code Block’* button.
-
----
-
-^(*Beep-boop. I am a bot.*)
 '''
 
-class MessageData:
+	message_break = '\n---\n\n'
+
+	signature_beep_boop = '*Beep-boop. I am a bot.*'
+	signature_delete = '[Remove-Item]'
+	delete_message = (
+			'Only /u/${redditor} can delete the comment. '
+			'This deletion request will be ignored if there are replies on the comment.\n')
+
+	describing_message = '''\tDescribing ${fixture_name}
+\t[${passing}] Demonstrates good markdown
+\tPassed: ${passed_count} Failed: ${failed_count}
+'''
+
+	@classmethod
+	def signature(cls, *, delete_message_url=None):
+		sb = '^('
+		sig_items = [cls.signature_beep_boop]
+		if delete_message_url:
+			sig_items.append(cls.signature_delete)
+
+		sb += ' | '.join(sig_items)
+		sb += ')'
+
+		if delete_message_url:
+			sb += '\n\n{}: {}'.format(cls.signature_delete, delete_message_url)
+		return sb
+
+	@classmethod
+	def describing(cls, *, fixture_name='Thing', passed=False):
+		st = Template(cls.describing_message)
+		subs = {
+			'fixture_name': fixture_name,
+			'passing': '\N{WHITE HEAVY CHECK MARK}' if passed else '\N{CROSS MARK}',
+			'passed_count': 1 if passed else 0,
+			'failed_count': 0 if passed else 1
+		}
+		s = st.substitute(subs)
+		return s
+
+class MessageMaker:
+	def get_signature(num=1, **kwargs):
+		sig = ''
+		if num == 1:
+			# Basic signature
+			sig = MessageInventory.signature()
+		elif num == 2:
+			# With delete button
+			redditor = kwargs.pop('redditor')
+			reddit_url = kwargs.pop('reddit_url', 'https://www.reddit.com')
+			message_compose_url = '{}/message/compose'.format(reddit_url)
+			query_args = dict(
+				to = kwargs.pop('bot_name'),
+				subject = '!delete %s' % kwargs.pop('reply_id'),
+				message = Template(MessageInventory.delete_message).substitute(redditor=redditor)
+			)
+			delete_message_url = message_compose_url + '?' + urlencode(query_args)
+
+			sig = MessageInventory.signature(delete_message_url=delete_message_url)
+
+		return sig
+
+	def get_fake_pester(**kwargs):
+		describing_kwargs = {
+			'fixture_name': kwargs.pop('thing_kind', 'Thing'),
+			'passed': kwargs.pop('passed', False)
+		}
+		return MessageInventory.describing(**describing_kwargs)
+
 	@messages.register(MessageBank.code_block_needed)
-	def code_block_needed(example=False, **kws):
-		return MessageStorage.code_block_with_example if example else MessageStorage.code_block
+	def code_block_needed(*, signature=1, pester=True, **kwargs):
+		sb = MessageInventory.code_block
+
+		if pester:
+			sb += MessageInventory.message_break
+			sb += MessageMaker.get_fake_pester(**kwargs)
+		if signature:
+			sb += MessageInventory.message_break
+			sb += MessageMaker.get_signature(signature, **kwargs)
+
+		sb += '\n'
+		return sb
 
 	@messages.register(MessageBank.inline_code_misuse)
-	def inline_code_misuse(**kws):
-		return MessageStorage.inline_code
+	def inline_code_misuse(*, signature=1, pester=True, **kwargs):
+		sb = MessageInventory.code_block
+
+		if pester:
+			sb += MessageInventory.message_break
+			sb += MessageMaker.get_fake_pester(**kwargs)
+		if signature:
+			sb += MessageInventory.message_break
+			sb += MessageMaker.get_signature(signature, **kwargs)
+
+		sb += '\n'
+		return sb
