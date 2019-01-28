@@ -153,6 +153,10 @@ def main():
 					logger.info('Ignore: not owned: {}'.format(comment.permalink))
 					continue
 
+				if item.author != comment.author:
+					logger.info('Ignore: not permitted: {}'.format(comment.permalink))
+					continue
+
 				if len(comment.replies):
 					logger.info('Ignore: has replies: {}'.format(comment.permalink))
 					continue

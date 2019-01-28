@@ -47,11 +47,12 @@ def main():
 
 	sql = SimpleNamespace()
 	sql.is_set_0 = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
+	sql.is_ignored_1 = 'UPDATE t3_reply SET is_ignored=1 WHERE target_id=?'
 	sql.is_obstructed_1 = 'UPDATE t3_reply SET is_obstructed=1 WHERE target_id=?'
 	sql.is_satisfied_1 = 'UPDATE t3_reply SET is_satisfied=1 WHERE target_id=?'
 	sql.revisit = '''SELECT *
 FROM t3_reply
-WHERE is_set = 1 AND is_obstructed = 0 AND is_satisfied = 0
+WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 		AND (strftime('%s', 'now') - target_created) <= {}
 '''.format(forget_after)
 	db = get_connection()
@@ -81,7 +82,7 @@ WHERE is_set = 1 AND is_obstructed = 0 AND is_satisfied = 0
 					logger.warning('Note: non-is_self submission: {}'.format(target_id))
 
 					with db:
-						db.execute(sql.is_obstructed_1, (target_id,))
+						db.execute(sql.is_ignored_1, (target_id,))
 					continue
 
 				is_deleted = submission.author is None and submission.selftext == '[deleted]'
@@ -93,7 +94,7 @@ WHERE is_set = 1 AND is_obstructed = 0 AND is_satisfied = 0
 						logger.info('Skip: submission was removed: {}'.format(target_id))
 
 					with db:
-						db.execute(sql.is_obstructed_1, (target_id,))
+						db.execute(sql.is_ignored_1, (target_id,))
 					continue
 
 				b = match_control.check_all(submission.selftext)
@@ -115,20 +116,20 @@ WHERE is_set = 1 AND is_obstructed = 0 AND is_satisfied = 0
 
 						with db:
 							db.execute(sql.is_obstructed_1, (target_id,))
-					else:
-						message = get_message(topic_flags,
-								signature=2,
-								passed=True,
-								thing_kind=type(submission).__name__,
-								redditor=submission.author.name,
-								bot_name=me.name,
-								reply_id=my_comment.id)
-						my_comment.edit(message)
 
-						with db:
-							db.execute(sql.is_satisfied_1, (target_id,))
+					message = get_message(topic_flags,
+							signature=2,
+							passed=True,
+							thing_kind=type(submission).__name__,
+							redditor=submission.author.name,
+							bot_name=me.name,
+							reply_id=my_comment.id)
+					my_comment.edit(message)
 
-						logger.info(f'Success: update comment `{reply_id}`')
+					with db:
+						db.execute(sql.is_satisfied_1, (target_id,))
+
+					logger.info(f'Success: update comment `{reply_id}`')
 
 			time.sleep(sleep_seconds)
 

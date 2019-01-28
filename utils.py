@@ -21,18 +21,20 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 	sql = 'SELECT 1 FROM t3_reply WHERE target_id=?'
 	c = db.execute(sql, (target_id,))
 	if c.fetchone():
-		# This shouldn't happen, but update the fields just in case
+		# The target id is already in the database.
+		# This shouldn't happen, but update the fields just in case.
 
 		sql = '''UPDATE t3_reply SET reply_id=?,
 		target_created=?,
 		topic_flags=?,
 		is_set=?,
+		is_ignored=?,
 		is_obstructed=?,
 		is_satisfied=?
 WHERE target_id=?
 '''
 		with db:
-			db.execute(sql, (reply_id, target_created, topic_flags, 1, 0, 0, target_id))
+			db.execute(sql, (reply_id, target_created, topic_flags, 1, 0, 0, 0, target_id))
 
 	else:
 		sql = '''INSERT INTO t3_reply (
@@ -41,10 +43,11 @@ WHERE target_id=?
 	target_created,
 	topic_flags,
 	is_set,
+	is_ignored,
 	is_obstructed,
 	is_satisfied)
-VALUES (?,?,?,?,?,?,?)
+VALUES (?,?,?,?,?,?,?,?)
 '''
 
 		with db:
-			db.execute(sql, (target_id, reply_id, target_created, topic_flags, 1, 0, 0))
+			db.execute(sql, (target_id, reply_id, target_created, topic_flags, 1, 0, 0, 0))

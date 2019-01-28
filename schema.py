@@ -16,13 +16,12 @@ def create_database():
 	reply_id TEXT,
 	target_created INTEGER,
 	topic_flags INTEGER,
-	is_set BOOLEAN, -- Is 1 when the bot's reply is exposed.
-	/* Is 1 when a redditor replies to the bot's comment,
-	or when the target is deleted.
-	*/
+	is_set BOOLEAN,
+	is_ignored BOOLEAN,
 	is_obstructed BOOLEAN,
-	is_satisfied BOOLEAN, -- Is 1 when the author fixes their Markdown.
+	is_satisfied BOOLEAN,
 	CHECK (is_set IN (0, 1)),
+	CHECK (is_ignored IN (0, 1)),
 	CHECK (is_obstructed IN (0, 1)),
 	CHECK (is_satisfied IN (0, 1))
 );
