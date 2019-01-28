@@ -122,7 +122,7 @@ class MessageMaker:
 
 	@messages.register(MessageBank.inline_code_misuse)
 	def inline_code_misuse(*, signature=1, pester=True, **kwargs):
-		sb = MessageInventory.code_block
+		sb = MessageInventory.inline_code
 
 		if pester:
 			sb += MessageInventory.message_break
