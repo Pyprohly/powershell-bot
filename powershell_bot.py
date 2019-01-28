@@ -15,6 +15,7 @@ if __name__ == '__main__':
 
 	from regex_checks import MatchBank, match_control
 	from utils import get_message, record_submission_reply
+	from db_access import get_t3_target_id
 
 def main():
 	script_path = Path(__file__).resolve()
@@ -149,11 +150,14 @@ def main():
 					logger.info('[Inbox] Skip: not found: {}'.format(comment_id))
 					continue
 
+				submission_id = get_t3_target_id(comment_id)
+				submission = reddit.submission(submission_id)
+
 				if comment.author != me:
 					logger.info('[Inbox] Skip: not owned: {}'.format(comment.permalink))
 					continue
 
-				if (item.author != comment.author) or (item.author.name != register['author']):
+				if (item.author != submission.author) or (item.author.name != register['author']):
 					logger.info('[Inbox] Skip: not permitted: {}'.format(comment.permalink))
 					continue
 
