@@ -21,7 +21,7 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 	sql = 'SELECT 1 FROM t3_reply WHERE target_id=?'
 	c = db.execute(sql, (target_id,))
 	if c.fetchone():
-		# This shouldn't happen, but just in case update the fields
+		# This shouldn't happen, but update the fields just in case
 
 		sql = '''UPDATE t3_reply SET reply_id=?,
 		target_created=?,

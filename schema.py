@@ -1,7 +1,7 @@
 
 import sqlite3
 
-db_file = './reply.db'
+db_file = './database.db'
 
 def get_connection():
 	con = sqlite3.connect(db_file)
