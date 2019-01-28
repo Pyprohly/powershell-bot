@@ -157,7 +157,7 @@ def main():
 					logger.info('[Inbox] Skip: not owned: {}'.format(comment.permalink))
 					continue
 
-				if (item.author != submission.author) or (item.author.name != register['author']):
+				if not ((item.author == submission.author) or (item.author.name == register['author'])):
 					logger.info('[Inbox] Skip: not permitted: {}'.format(comment.permalink))
 					continue
 
