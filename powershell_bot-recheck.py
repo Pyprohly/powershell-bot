@@ -76,6 +76,26 @@ WHERE is_set = 1 AND is_obstructed = 0 AND is_satisfied = 0
 						db.execute(sql.is_set_0, (target_id,))
 					continue
 
+				if not submission.is_self:
+					# This shouldn't happen.
+					logger.warning('Note: non-is_self submission: {}'.format(target_id))
+
+					with db:
+						db.execute(sql.is_obstructed_1, (target_id,))
+					continue
+
+				is_deleted = submission.author is None and submission.selftext == '[deleted]'
+				is_removed = submission.selftext == '[removed]'
+				if is_deleted or is_removed:
+					if is_deleted:
+						logger.info('Skip: submission was deleted: {}'.format(target_id))
+					elif is_removed:
+						logger.info('Skip: submission was removed: {}'.format(target_id))
+
+					with db:
+						db.execute(sql.is_obstructed_1, (target_id,))
+					continue
+
 				b = match_control.check_all(submission.selftext)
 				if b == 0:
 					# The author has fixed their post. Success!
@@ -108,7 +128,7 @@ WHERE is_set = 1 AND is_obstructed = 0 AND is_satisfied = 0
 						with db:
 							db.execute(sql.is_satisfied_1, (target_id,))
 
-						logger.info(f'Success: process comment `{reply_id}`')
+						logger.info(f'Success: update comment `{reply_id}`')
 
 			time.sleep(sleep_seconds)
 
