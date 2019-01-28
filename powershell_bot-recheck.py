@@ -151,6 +151,9 @@ WHERE is_set = 1 AND is_obstructed = 0 AND is_satisfied = 0
 			else:
 				logger.warning('Exception: unhandled PRAW exception:', exc_info=True)
 
+		except Exception:
+			logger.error('Exception: unhandled exception:', exc_info=True)
+
 if __name__ == '__main__':
 	try:
 		main()
