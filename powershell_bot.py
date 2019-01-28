@@ -113,31 +113,31 @@ def main():
 					break
 
 				if item.id in seen_deque['inbox']:
-					logger.debug('Skip: seen item: {}'.format(item.id))
+					logger.debug('[Inbox] Skip: seen item: {}'.format(item.id))
 					continue
 				if item.created_utc < check_time['inbox']:
 					if item.created_utc < start_time:
-						logger.debug('Skip: item was submitted before bot started: {}'.format(item.id))
+						logger.debug('[Inbox] Skip: item was submitted before bot started: {}'.format(item.id))
 					else:
-						logger.debug('Skip: item was seen or timestamp was supplanted: {}'.format(item.id))
+						logger.debug('[Inbox] Skip: item was seen or timestamp was supplanted: {}'.format(item.id))
 					continue
 				check_time['inbox'] += control_checkpoint_progression(item.created_utc - check_time['inbox'])
 				seen_deque['inbox'].append(item.id)
 
 				if item.was_comment:
-					logger.info('Skip: ignore non-`Message` item: {}'.format(item.id))
+					logger.info('[Inbox] Skip: ignore non-`Message` item: {}'.format(item.id))
 					continue
 
 				if time.time() - item.created_utc > ignore_inbox_items_older_than:
-					logger.info('Skip: {0} is older than {1} seconds'.format(type(item).__name__, ignore_inbox_items_older_than))
+					logger.info('[Inbox] Skip: {0} is older than {1} seconds'.format(type(item).__name__, ignore_inbox_items_older_than))
 					continue
 
 				match = delete_regexp.match(item.subject)
 				if not match:
-					logger.info('Skip: no match (subject line): {}'.format(item.id))
+					logger.info('[Inbox] Skip: no match (subject line): {}'.format(item.id))
 					continue
 
-				logger.info('Process inbox item (by /u/{}): {}'.format(item.author.name, item.id))
+				logger.info('[Inbox] Process inbox item (by /u/{}): {}'.format(item.author.name, item.id))
 
 				item.mark_read()
 
@@ -146,24 +146,24 @@ def main():
 				try:
 					comment.refresh()
 				except praw.exceptions.PRAWException:
-					logger.info('Ignore: not found: {}'.format(comment_id))
+					logger.info('[Inbox] Ignore: not found: {}'.format(comment_id))
 					continue
 
 				if comment.author != me:
-					logger.info('Ignore: not owned: {}'.format(comment.permalink))
+					logger.info('[Inbox] Ignore: not owned: {}'.format(comment.permalink))
 					continue
 
 				if item.author != comment.author:
-					logger.info('Ignore: not permitted: {}'.format(comment.permalink))
+					logger.info('[Inbox] Ignore: not permitted: {}'.format(comment.permalink))
 					continue
 
 				if len(comment.replies):
-					logger.info('Ignore: has replies: {}'.format(comment.permalink))
+					logger.info('[Inbox] Ignore: has replies: {}'.format(comment.permalink))
 					continue
 
 				comment.delete()
 
-				logger.info('Success: deleted: {}'.format(comment.permalink))
+				logger.info('[Inbox] Success: deleted: {}'.format(comment.permalink))
 
 		except (praw.exceptions.PRAWException, prawcore.exceptions.PrawcoreException) as e:
 			if isinstance(e, praw.exceptions.APIException):
