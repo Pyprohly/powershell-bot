@@ -45,12 +45,13 @@ def main():
 
 	forget_after = 60 * 60 * 24 * 10 # 10 days
 
-	sql = SimpleNamespace()
-	sql.is_set_0 = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
-	sql.is_ignored_1 = 'UPDATE t3_reply SET is_ignored=1 WHERE target_id=?'
-	sql.is_obstructed_1 = 'UPDATE t3_reply SET is_obstructed=1 WHERE target_id=?'
-	sql.is_satisfied_1 = 'UPDATE t3_reply SET is_satisfied=1 WHERE target_id=?'
-	sql.revisit = '''SELECT *
+	sqll = SimpleNamespace()
+	sqll.is_set_0 = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
+	sqll.is_ignored_1 = 'UPDATE t3_reply SET is_ignored=1 WHERE target_id=?'
+	sqll.is_obstructed_1 = 'UPDATE t3_reply SET is_obstructed=1 WHERE target_id=?'
+	sqll.is_satisfied_1 = 'UPDATE t3_reply SET is_satisfied=1 WHERE target_id=?'
+	sqll.topic_flags = 'UPDATE t3_reply SET topic_flags=? WHERE target_id=?'
+	sqll.revisit = '''SELECT *
 FROM t3_reply
 WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 		AND (strftime('%s', 'now') - target_created) <= {}
@@ -59,7 +60,7 @@ WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 
 	while 1:
 		try:
-			c = db.execute(sql.revisit)
+			c = db.execute(sqll.revisit)
 			for row in c:
 				target_id = row['target_id']
 				reply_id = row['reply_id']
@@ -74,7 +75,7 @@ WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 					logger.warning('Skip: recorded submission not found: {}'.format(target_id))
 
 					with db:
-						db.execute(sql.is_set_0, (target_id,))
+						db.execute(sqll.is_set_0, (target_id,))
 					continue
 
 				if not submission.is_self:
@@ -82,7 +83,7 @@ WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 					logger.warning('Note: non-is_self submission: {}'.format(target_id))
 
 					with db:
-						db.execute(sql.is_ignored_1, (target_id,))
+						db.execute(sqll.is_ignored_1, (target_id,))
 					continue
 
 				is_deleted = submission.author is None and submission.selftext == '[deleted]'
@@ -94,42 +95,60 @@ WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 						logger.info('Skip: submission was removed: {}'.format(target_id))
 
 					with db:
-						db.execute(sql.is_ignored_1, (target_id,))
+						db.execute(sqll.is_ignored_1, (target_id,))
 					continue
 
 				b = match_control.check_all(submission.selftext)
-				if b == 0:
-					# The author has fixed their post. Success!
+				topic_flags_0 = b == 0
+				topic_flags_changed = b != topic_flags
 
+				if topic_flags_0 or topic_flags_changed:
 					my_comment = reddit.comment(reply_id)
 					try:
 						my_comment.refresh()
 					except praw.exceptions.PRAWException:
 						# The comment has disappeared. It may have been deleted.
 						with db:
-							db.execute(sql.is_set_0, (target_id,))
+							db.execute(sqll.is_set_0, (target_id,))
 						continue
 
 					if len(my_comment.replies):
-						# Don't do anything to the comment if there are replies.
-						logger.info(f'Skip: found replies on comment `{reply_id}`')
+						logger.info(f'Info: found replies on comment `{reply_id}`')
 
 						with db:
-							db.execute(sql.is_obstructed_1, (target_id,))
+							db.execute(sqll.is_obstructed_1, (target_id,))
 
-					message = get_message(topic_flags,
-							signature=2,
-							passed=True,
-							thing_kind=type(submission).__name__,
-							redditor=submission.author.name,
-							bot_name=me.name,
-							reply_id=my_comment.id)
-					my_comment.edit(message)
+					if topic_flags_0:
+						# The author has fixed their post. Success!
 
-					with db:
-						db.execute(sql.is_satisfied_1, (target_id,))
+						message = get_message(topic_flags,
+								signature=2,
+								passed=True,
+								thing_kind=type(submission).__name__,
+								redditor=submission.author.name,
+								bot_name=me.name,
+								reply_id=my_comment.id)
+						my_comment.edit(message)
 
-					logger.info(f'Success: update comment `{reply_id}`')
+						with db:
+							db.execute(sqll.is_satisfied_1, (target_id,))
+
+						logger.info(f'Success: update comment (passing) `{reply_id}`')
+
+					elif topic_flags_changed:
+						message = get_message(b,
+								signature=2,
+								passed=False,
+								thing_kind=type(submission).__name__,
+								redditor=submission.author.name,
+								bot_name=me.name,
+								reply_id=my_comment.id)
+						my_comment.edit(message)
+
+						with db:
+							db.execute(sqll.topic_flags, (b, target_id))
+
+						logger.info(f'Success: update comment (failing) `{reply_id}`')
 
 			time.sleep(sleep_seconds)
 
