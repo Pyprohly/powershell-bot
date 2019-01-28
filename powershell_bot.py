@@ -137,7 +137,7 @@ def main():
 					logger.info('[Inbox] Skip: no match (subject line): {}'.format(item.id))
 					continue
 
-				logger.info('[Inbox] Process inbox item (by /u/{}): {}'.format(item.author.name, item.id))
+				logger.info('[Inbox] Process inbox item (from /u/{}): {}'.format(item.author.name, item.id))
 
 				item.mark_read()
 
@@ -146,19 +146,19 @@ def main():
 				try:
 					comment.refresh()
 				except praw.exceptions.PRAWException:
-					logger.info('[Inbox] Ignore: not found: {}'.format(comment_id))
+					logger.info('[Inbox] Skip: not found: {}'.format(comment_id))
 					continue
 
 				if comment.author != me:
-					logger.info('[Inbox] Ignore: not owned: {}'.format(comment.permalink))
+					logger.info('[Inbox] Skip: not owned: {}'.format(comment.permalink))
 					continue
 
-				if item.author != comment.author:
-					logger.info('[Inbox] Ignore: not permitted: {}'.format(comment.permalink))
+				if (item.author != comment.author) or (item.author.name != register['author']):
+					logger.info('[Inbox] Skip: not permitted: {}'.format(comment.permalink))
 					continue
 
 				if len(comment.replies):
-					logger.info('[Inbox] Ignore: has replies: {}'.format(comment.permalink))
+					logger.info('[Inbox] Skip: has replies: {}'.format(comment.permalink))
 					continue
 
 				comment.delete()
