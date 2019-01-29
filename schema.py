@@ -22,7 +22,7 @@ def create_database():
 	is_deletable BOOLEAN,
 	CHECK (is_set IN (0, 1)),
 	CHECK (is_ignored IN (0, 1)),
-	CHECK (is_deletable IN (0, 1)))
+	CHECK (is_deletable IN (0, 1))
 );
 ''')
 	db.commit()

@@ -97,7 +97,6 @@ def main():
 						passed=False,
 						thing_kind=type(submission).__name__)
 				reply = submission.reply(message)
-				db_services.record_submission_reply(submission, reply, b)
 
 				message = get_message(b,
 						signature=2,
@@ -107,6 +106,8 @@ def main():
 						bot_name=me.name,
 						reply_id=reply.id)
 				reply.edit(message)
+
+				db_services.record_submission_reply(submission, reply, b)
 
 			for item in reddit.inbox.stream(pause_after=-1):
 				if item is None:

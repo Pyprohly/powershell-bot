@@ -49,6 +49,7 @@ def main():
 				target_id = row['target_id']
 				reply_id = row['reply_id']
 				topic_flags = row['topic_flags']
+				previous_topic_flags = row['previous_topic_flags']
 
 				submission = reddit.submission(target_id)
 				try:
@@ -80,53 +81,51 @@ def main():
 					continue
 
 				b = match_control.check_all(submission.selftext)
-				topic_flags_0 = b == 0
+
 				topic_flags_changed = b != topic_flags
+				if not topic_flags_changed:
+					logger.debug('Skip: no change: {}'.format(target_id))
+					continue
 
-				if topic_flags_0 or topic_flags_changed:
-					my_comment = reddit.comment(reply_id)
-					try:
-						my_comment.refresh()
-					except praw.exceptions.PRAWException:
-						# The comment has disappeared. It may have been deleted.
-						db_services.assign_is_set_0(target_id)
-						continue
+				my_comment = reddit.comment(reply_id)
+				try:
+					my_comment.refresh()
+				except praw.exceptions.PRAWException:
+					# The comment has disappeared. It may have been deleted.
+					db_services.assign_is_set_0(target_id)
+					continue
 
-					if len(my_comment.replies):
-						logger.info(f'Info: found replies on comment `{reply_id}`')
+				if len(my_comment.replies):
+					logger.info(f'Info: found replies on comment `{reply_id}`')
 
-						db_services.assign_is_deletable_1(target_id)
+					db_services.assign_is_deletable_1(target_id)
 
-					if topic_flags_0:
-						# The author has fixed their post. Success!
+				topic_flags_0 = b == 0
+				if topic_flags_0:
+					# The author has fixed their post. Success!
+					message = get_message(topic_flags,
+							signature=2,
+							passed=True,
+							thing_kind=type(submission).__name__,
+							redditor=submission.author.name,
+							bot_name=me.name,
+							reply_id=my_comment.id)
+					my_comment.edit(message)
+					logger.info(f'Success: update comment (passing) `{reply_id}`')
+				else:
+					# topic_flags have changed but markdown still not fixed yet.
+					message = get_message(b,
+							signature=2,
+							passed=False,
+							thing_kind=type(submission).__name__,
+							redditor=submission.author.name,
+							bot_name=me.name,
+							reply_id=my_comment.id)
+					my_comment.edit(message)
+					logger.info(f'Success: update comment (failing) `{reply_id}`')
 
-						message = get_message(topic_flags,
-								signature=2,
-								passed=True,
-								thing_kind=type(submission).__name__,
-								redditor=submission.author.name,
-								bot_name=me.name,
-								reply_id=my_comment.id)
-						my_comment.edit(message)
-
-						db_services.assign_topic_flags(0, target_id)
-
-						logger.info(f'Success: update comment (passing) `{reply_id}`')
-
-					elif topic_flags_changed:
-						message = get_message(b,
-								signature=2,
-								passed=False,
-								thing_kind=type(submission).__name__,
-								redditor=submission.author.name,
-								bot_name=me.name,
-								reply_id=my_comment.id)
-						my_comment.edit(message)
-
-						db_services.assign_topic_flags(b, target_id)
-						db_services.assign_previous_topic_flags(topic_flags, target_id)
-
-						logger.info(f'Success: update comment (failing) `{reply_id}`')
+				db_services.assign_topic_flags(b, target_id)
+				db_services.assign_previous_topic_flags(topic_flags, target_id)
 
 			time.sleep(sleep_seconds)
 

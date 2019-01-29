@@ -6,7 +6,7 @@ from schema import get_connection
 db = get_connection()
 
 forget_after = 60 * 60 * 24 * 7 # 7 days
-forget_acknowledged_after = 60 * 60 * 24 # 1 day
+forget_acknowledged_after = 60 * 60 * 24 * 100# 1 day
 
 sql_lines = SimpleNamespace()
 sql_lines.is_set_0 = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
@@ -58,13 +58,13 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 		# This shouldn't happen, but update the fields just in case.
 
 		with db:
-			db.execute(sql_lines.record_submission_reply_update, (reply_id, target_created, topic_flags, None, 1, 0, 0, 0, target_id))
+			db.execute(sql_lines.record_submission_reply_update, (reply_id, target_created, topic_flags, None, 1, 0, 0, target_id))
 
 	else:
 		with db:
-			db.execute(sql_lines.record_submission_reply_insert, (target_id, reply_id, target_created, topic_flags, None, 1, 0, 0, 0))
+			db.execute(sql_lines.record_submission_reply_insert, (target_id, reply_id, target_created, topic_flags, None, 1, 0, 0))
 
-def recheck():
+def revisit():
 	c = db.execute(sql_lines.revisit)
 	for row in c:
 		yield row
