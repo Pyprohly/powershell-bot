@@ -27,14 +27,14 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 		sql = '''UPDATE t3_reply SET reply_id=?,
 		target_created=?,
 		topic_flags=?,
+		previous_topic_flags=?,
 		is_set=?,
 		is_ignored=?,
-		is_deletable=?,
-		is_acknowledged=?
+		is_deletable=?
 WHERE target_id=?
 '''
 		with db:
-			db.execute(sql, (reply_id, target_created, topic_flags, 1, 0, 0, 0, target_id))
+			db.execute(sql, (reply_id, target_created, topic_flags, None, 1, 0, 0, 0, target_id))
 
 	else:
 		sql = '''INSERT INTO t3_reply (
@@ -42,12 +42,12 @@ WHERE target_id=?
 	reply_id,
 	target_created,
 	topic_flags,
+	previous_topic_flags,
 	is_set,
 	is_ignored,
-	is_deletable,
-	is_acknowledged)
+	is_deletable)
 VALUES (?,?,?,?,?,?,?,?)
 '''
 
 		with db:
-			db.execute(sql, (target_id, reply_id, target_created, topic_flags, 1, 0, 0, 0))
+			db.execute(sql, (target_id, reply_id, target_created, topic_flags, None, 1, 0, 0, 0))

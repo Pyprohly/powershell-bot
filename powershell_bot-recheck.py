@@ -109,7 +109,7 @@ def main():
 								reply_id=my_comment.id)
 						my_comment.edit(message)
 
-						db_services.assign_is_acknowledged_1(target_id)
+						db_services.assign_topic_flags(0, target_id)
 
 						logger.info(f'Success: update comment (passing) `{reply_id}`')
 
@@ -124,6 +124,7 @@ def main():
 						my_comment.edit(message)
 
 						db_services.assign_topic_flags(b, target_id)
+						db_services.assign_previous_topic_flags(topic_flags, target_id)
 
 						logger.info(f'Success: update comment (failing) `{reply_id}`')
 

@@ -12,15 +12,16 @@ sql_lines = SimpleNamespace()
 sql_lines.is_set_0 = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
 sql_lines.is_ignored_1 = 'UPDATE t3_reply SET is_ignored=1 WHERE target_id=?'
 sql_lines.is_deletable_1 = 'UPDATE t3_reply SET is_deletable=1 WHERE target_id=?'
-sql_lines.is_acknowledged_1 = 'UPDATE t3_reply SET is_acknowledged=1 WHERE target_id=?'
 sql_lines.topic_flags = 'UPDATE t3_reply SET topic_flags=? WHERE target_id=?'
+sql_lines.previous_topic_flags = 'UPDATE t3_reply SET previous_topic_flags=? WHERE target_id=?'
 sql_lines.revisit = '''SELECT *
 FROM t3_reply
 WHERE is_set = 1 AND is_ignored = 0
-		AND (
-			(is_acknowledged = 1 AND ((strftime('%s', 'now') - target_created) <= {0}}))
-			OR
-			(is_acknowledged = 0 AND ((strftime('%s', 'now') - target_created) <= {1}})))
+		AND ((
+				topic_flags = 0 AND ((strftime('%s', 'now') - target_created) <= {0})
+			) OR (
+				topic_flags != 0 AND ((strftime('%s', 'now') - target_created) <= {1})
+			))
 '''.format(forget_acknowledged_after, forget_after)
 
 def recheck():
@@ -56,10 +57,10 @@ def assign_is_deletable_1(target_id):
 	with db:
 		db.execute(sql_lines.is_deletable_1, (target_id,))
 
-def assign_is_acknowledged_1(target_id):
-	with db:
-		db.execute(sql_lines.is_acknowledged_1, (target_id,))
-
 def assign_topic_flags(topic_flags, target_id):
 	with db:
 		db.execute(sql_lines.topic_flags, (topic_flags, target_id))
+
+def assign_previous_topic_flags(topic_flags, target_id):
+	with db:
+		db.execute(sql_lines.previous_topic_flags, (topic_flags, target_id))

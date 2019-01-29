@@ -16,14 +16,13 @@ def create_database():
 	reply_id TEXT,
 	target_created INTEGER,
 	topic_flags INTEGER,
+	previous_topic_flags INTEGER,
 	is_set BOOLEAN,
 	is_ignored BOOLEAN,
 	is_deletable BOOLEAN,
-	is_acknowledged BOOLEAN,
 	CHECK (is_set IN (0, 1)),
 	CHECK (is_ignored IN (0, 1)),
-	CHECK (is_deletable IN (0, 1)),
-	CHECK (is_acknowledged IN (0, 1))
+	CHECK (is_deletable IN (0, 1)))
 );
 ''')
 	db.commit()
