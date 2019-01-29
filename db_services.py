@@ -11,7 +11,7 @@ forget_acknowledged_after = 60 * 60 * 24 * 100# 1 day
 sql_lines = SimpleNamespace()
 sql_lines.is_set_0 = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
 sql_lines.is_ignored_1 = 'UPDATE t3_reply SET is_ignored=1 WHERE target_id=?'
-sql_lines.is_deletable_1 = 'UPDATE t3_reply SET is_deletable=1 WHERE target_id=?'
+sql_lines.is_deletable_0 = 'UPDATE t3_reply SET is_deletable=0 WHERE target_id=?'
 sql_lines.topic_flags = 'UPDATE t3_reply SET topic_flags=? WHERE target_id=?'
 sql_lines.previous_topic_flags = 'UPDATE t3_reply SET previous_topic_flags=? WHERE target_id=?'
 sql_lines.revisit = '''SELECT *
@@ -58,11 +58,11 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 		# This shouldn't happen, but update the fields just in case.
 
 		with db:
-			db.execute(sql_lines.record_submission_reply_update, (reply_id, target_created, topic_flags, None, 1, 0, 0, target_id))
+			db.execute(sql_lines.record_submission_reply_update, (reply_id, target_created, topic_flags, None, 1, 0, 1, target_id))
 
 	else:
 		with db:
-			db.execute(sql_lines.record_submission_reply_insert, (target_id, reply_id, target_created, topic_flags, None, 1, 0, 0))
+			db.execute(sql_lines.record_submission_reply_insert, (target_id, reply_id, target_created, topic_flags, None, 1, 0, 1))
 
 def revisit():
 	c = db.execute(sql_lines.revisit)
@@ -82,7 +82,7 @@ def is_deletable(t1_reply_id):
 	c = db.execute(sql, (t1_reply_id,))
 	result = c.fetchone()
 	if result is None:
-		return False
+		return True
 	return bool(result['is_deletable'])
 
 def assign_is_set_0(target_id):
@@ -93,9 +93,9 @@ def assign_is_ignored_1(target_id):
 	with db:
 		db.execute(sql_lines.is_ignored_1, (target_id,))
 
-def assign_is_deletable_1(target_id):
+def assign_is_deletable_0(target_id):
 	with db:
-		db.execute(sql_lines.is_deletable_1, (target_id,))
+		db.execute(sql_lines.is_deletable_0, (target_id,))
 
 def assign_topic_flags(topic_flags, target_id):
 	with db:
