@@ -6,6 +6,7 @@ from schema import get_connection
 db = get_connection()
 
 forget_after = 60 * 60 * 24 * 7 # 7 days
+forget_acknowledged_after = 60 * 60 * 24 # 1 day
 
 sql_lines = SimpleNamespace()
 sql_lines.is_set_0 = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
@@ -15,9 +16,12 @@ sql_lines.is_acknowledged_1 = 'UPDATE t3_reply SET is_acknowledged=1 WHERE targe
 sql_lines.topic_flags = 'UPDATE t3_reply SET topic_flags=? WHERE target_id=?'
 sql_lines.revisit = '''SELECT *
 FROM t3_reply
-WHERE is_set = 1 AND is_ignored = 0 AND is_acknowledged = 0
-		AND (strftime('%s', 'now') - target_created) <= {}
-'''.format(forget_after)
+WHERE is_set = 1 AND is_ignored = 0
+		AND (
+			(is_acknowledged = 1 AND ((strftime('%s', 'now') - target_created) <= {0}}))
+			OR
+			(is_acknowledged = 0 AND ((strftime('%s', 'now') - target_created) <= {1}})))
+'''.format(forget_acknowledged_after, forget_after)
 
 def recheck():
 	c = db.execute(sql_lines.revisit)
