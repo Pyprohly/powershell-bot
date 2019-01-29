@@ -13,7 +13,7 @@ if __name__ == '__main__':
 	import re
 
 	from regex_checks import match_control
-	from utils import get_message, record_submission_reply
+	from utils import get_message
 	import db_services
 
 def main():
@@ -97,7 +97,7 @@ def main():
 						passed=False,
 						thing_kind=type(submission).__name__)
 				reply = submission.reply(message)
-				record_submission_reply(submission, reply, b)
+				db_services.record_submission_reply(submission, reply, b)
 
 				message = get_message(b,
 						signature=2,

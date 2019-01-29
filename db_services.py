@@ -23,6 +23,46 @@ WHERE is_set = 1 AND is_ignored = 0
 				topic_flags != 0 AND ((strftime('%s', 'now') - target_created) <= {1})
 			))
 '''.format(forget_acknowledged_after, forget_after)
+sql_lines.record_submission_reply_update = '''UPDATE t3_reply SET reply_id=?,
+		target_created=?,
+		topic_flags=?,
+		previous_topic_flags=?,
+		is_set=?,
+		is_ignored=?,
+		is_deletable=?
+WHERE target_id=?
+'''
+sql_lines.record_submission_reply_insert = '''INSERT INTO t3_reply (
+	target_id,
+	reply_id,
+	target_created,
+	topic_flags,
+	previous_topic_flags,
+	is_set,
+	is_ignored,
+	is_deletable)
+VALUES (?,?,?,?,?,?,?,?)
+'''
+
+def record_submission_reply(submission, comment_reply, topic_flags=0):
+	target_id = submission.id
+	reply_id = comment_reply.id
+	target_created = submission.created_utc
+
+	db = get_connection()
+
+	sql = 'SELECT 1 FROM t3_reply WHERE target_id=?'
+	c = db.execute(sql, (target_id,))
+	if c.fetchone():
+		# The target id is already in the database.
+		# This shouldn't happen, but update the fields just in case.
+
+		with db:
+			db.execute(sql_lines.record_submission_reply_update, (reply_id, target_created, topic_flags, None, 1, 0, 0, 0, target_id))
+
+	else:
+		with db:
+			db.execute(sql_lines.record_submission_reply_insert, (target_id, reply_id, target_created, topic_flags, None, 1, 0, 0, 0))
 
 def recheck():
 	c = db.execute(sql_lines.revisit)
