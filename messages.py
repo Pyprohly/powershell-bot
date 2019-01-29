@@ -43,8 +43,7 @@ The inline code text styling is for use in paragraphs of text. For larger sequen
 	signature_beep_boop = '*Beep-boop. I am a bot.*'
 	signature_delete = '[Remove-Item]'
 	delete_message = (
-			'Only /u/${redditor} can delete the comment. '
-			'This deletion request will be ignored if there are replies on the comment.\n')
+			'Only the OP may delete the comment. A comment with replies will not be removed.\n')
 
 	describing_message = '''\tDescribing ${fixture_name}
 \t[${passing}] Demonstrates good markdown
