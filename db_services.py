@@ -10,12 +10,12 @@ forget_after = 60 * 60 * 24 * 7 # 7 days
 sql_lines = SimpleNamespace()
 sql_lines.is_set_0 = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
 sql_lines.is_ignored_1 = 'UPDATE t3_reply SET is_ignored=1 WHERE target_id=?'
-sql_lines.is_obstructed_1 = 'UPDATE t3_reply SET is_obstructed=1 WHERE target_id=?'
-sql_lines.is_satisfied_1 = 'UPDATE t3_reply SET is_satisfied=1 WHERE target_id=?'
+sql_lines.is_deletable_1 = 'UPDATE t3_reply SET is_deletable=1 WHERE target_id=?'
+sql_lines.is_acknowledged_1 = 'UPDATE t3_reply SET is_acknowledged=1 WHERE target_id=?'
 sql_lines.topic_flags = 'UPDATE t3_reply SET topic_flags=? WHERE target_id=?'
 sql_lines.revisit = '''SELECT *
 FROM t3_reply
-WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
+WHERE is_set = 1 AND is_ignored = 0 AND is_acknowledged = 0
 		AND (strftime('%s', 'now') - target_created) <= {}
 '''.format(forget_after)
 
@@ -41,13 +41,13 @@ def assign_is_ignored_1(target_id):
 	with db:
 		db.execute(sql_lines.is_ignored_1, (target_id,))
 
-def assign_is_obstructed_1(target_id):
+def assign_is_deletable_1(target_id):
 	with db:
-		db.execute(sql_lines.is_obstructed_1, (target_id,))
+		db.execute(sql_lines.is_deletable_1, (target_id,))
 
-def assign_is_satisfied_1(target_id):
+def assign_is_acknowledged_1(target_id):
 	with db:
-		db.execute(sql_lines.is_satisfied_1, (target_id,))
+		db.execute(sql_lines.is_acknowledged_1, (target_id,))
 
 def assign_topic_flags(topic_flags, target_id):
 	with db:

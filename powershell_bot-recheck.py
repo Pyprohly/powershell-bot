@@ -95,7 +95,7 @@ def main():
 					if len(my_comment.replies):
 						logger.info(f'Info: found replies on comment `{reply_id}`')
 
-						db_services.assign_is_obstructed_1(target_id)
+						db_services.assign_is_deletable_1(target_id)
 
 					if topic_flags_0:
 						# The author has fixed their post. Success!
@@ -109,7 +109,7 @@ def main():
 								reply_id=my_comment.id)
 						my_comment.edit(message)
 
-						db_services.assign_is_satisfied_1(target_id)
+						db_services.assign_is_acknowledged_1(target_id)
 
 						logger.info(f'Success: update comment (passing) `{reply_id}`')
 

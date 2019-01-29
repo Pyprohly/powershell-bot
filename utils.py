@@ -29,8 +29,8 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 		topic_flags=?,
 		is_set=?,
 		is_ignored=?,
-		is_obstructed=?,
-		is_satisfied=?
+		is_deletable=?,
+		is_acknowledged=?
 WHERE target_id=?
 '''
 		with db:
@@ -44,8 +44,8 @@ WHERE target_id=?
 	topic_flags,
 	is_set,
 	is_ignored,
-	is_obstructed,
-	is_satisfied)
+	is_deletable,
+	is_acknowledged)
 VALUES (?,?,?,?,?,?,?,?)
 '''
 
