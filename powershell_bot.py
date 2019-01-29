@@ -11,11 +11,10 @@ if __name__ == '__main__':
 	import praw, prawcore
 
 	import re
-	from types import SimpleNamespace
 
-	from regex_checks import MatchBank, match_control
+	from regex_checks import match_control
 	from utils import get_message, record_submission_reply
-	from db_services import get_t3_target_id
+	import db_services
 
 def main():
 	script_path = Path(__file__).resolve()
@@ -150,7 +149,9 @@ def main():
 					logger.info('[Inbox] Skip: not found: {}'.format(comment_id))
 					continue
 
-				submission_id = get_t3_target_id(comment_id)
+				submission_id = db_services.get_t3_target_id(comment_id)
+				if submission_id is None:
+					logger.warning('[Inbox] Error: could not retrieve target submission id from comment id: {}'.format(comment_id))
 				submission = reddit.submission(submission_id)
 
 				if comment.author != me:
@@ -163,6 +164,10 @@ def main():
 
 				if len(comment.replies):
 					logger.info('[Inbox] Skip: has replies: {}'.format(comment.permalink))
+					continue
+
+				if not db_services.is_deletable(comment_id):
+					logger.info('[Inbox] Skip: not deletable: {}'.format(comment.permalink))
 					continue
 
 				comment.delete()

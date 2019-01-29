@@ -25,13 +25,20 @@ def recheck():
 		yield row
 
 def get_t3_target_id(t1_reply_id):
-	with db:
-		sql = 'SELECT target_id FROM t3_reply WHERE reply_id=?'
-		c = db.execute(sql, (t1_reply_id,))
-		result = c.fetchone()
-		if result is None:
-			return None
-		return result['target_id']
+	sql = 'SELECT target_id FROM t3_reply WHERE reply_id=?'
+	c = db.execute(sql, (t1_reply_id,))
+	result = c.fetchone()
+	if result is None:
+		return None
+	return result['target_id']
+
+def is_deletable(t1_reply_id):
+	sql = 'SELECT is_deletable FROM t3_reply WHERE reply_id=?'
+	c = db.execute(sql, (t1_reply_id,))
+	result = c.fetchone()
+	if result is None:
+		return False
+	return bool(result['is_deletable'])
 
 def assign_is_set_0(target_id):
 	with db:
