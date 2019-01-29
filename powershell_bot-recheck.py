@@ -58,7 +58,7 @@ WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 '''.format(forget_after)
 	db = get_connection()
 
-	while 1:
+	while True:
 		try:
 			c = db.execute(sqll.revisit)
 			for row in c:

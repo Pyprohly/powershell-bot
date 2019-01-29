@@ -58,7 +58,7 @@ def main():
 	seen_deque = dict.fromkeys(__, deque(maxlen=100))
 	control_checkpoint_progression = lambda d: max(0, .5*(d - 10))
 
-	while 1:
+	while True:
 		try:
 			for submission in subreddit.stream.submissions(pause_after=-1):
 				if submission is None:
