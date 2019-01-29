@@ -45,6 +45,8 @@ def main():
 
 	ignore_inbox_items_older_than = 60 * 2
 
+	deletion_request_trustees = [i.lower() for i in (register['author'], praw_config['username'])]
+
 	reddit = praw.Reddit(**{k: v for k, v in praw_config.items() if v is not None})
 	if reddit.read_only:
 		raise RuntimeError('a read-write reddit instance is required')
@@ -159,7 +161,9 @@ def main():
 					logger.info('[Inbox] Skip: not owned: {}'.format(comment.permalink))
 					continue
 
-				if not ((item.author == submission.author) or (item.author.name == register['author'])):
+				request_by_op = item.author == submission.author
+				request_by_authority = item.author.name.lower() in deletion_request_trustees
+				if not (request_by_op or request_by_authority):
 					logger.info('[Inbox] Skip: not permitted: {}'.format(comment.permalink))
 					continue
 
