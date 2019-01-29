@@ -9,10 +9,10 @@ from pathlib import Path
 from types import SimpleNamespace
 import praw, prawcore
 
-from schema import get_connection
-from regex_checks import MatchBank, match_control
+from regex_checks import match_control
 from config import praw_config
 from utils import get_message
+import db_services
 
 def main():
 	script_path = Path(__file__).resolve()
@@ -43,25 +43,9 @@ def main():
 
 	sleep_seconds = 30
 
-	forget_after = 60 * 60 * 24 * 10 # 10 days
-
-	sqll = SimpleNamespace()
-	sqll.is_set_0 = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
-	sqll.is_ignored_1 = 'UPDATE t3_reply SET is_ignored=1 WHERE target_id=?'
-	sqll.is_obstructed_1 = 'UPDATE t3_reply SET is_obstructed=1 WHERE target_id=?'
-	sqll.is_satisfied_1 = 'UPDATE t3_reply SET is_satisfied=1 WHERE target_id=?'
-	sqll.topic_flags = 'UPDATE t3_reply SET topic_flags=? WHERE target_id=?'
-	sqll.revisit = '''SELECT *
-FROM t3_reply
-WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
-		AND (strftime('%s', 'now') - target_created) <= {}
-'''.format(forget_after)
-	db = get_connection()
-
 	while True:
 		try:
-			c = db.execute(sqll.revisit)
-			for row in c:
+			for row in db_services.revisit():
 				target_id = row['target_id']
 				reply_id = row['reply_id']
 				topic_flags = row['topic_flags']
@@ -74,16 +58,14 @@ WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 					# Avoid processing it in future.
 					logger.warning('Skip: recorded submission not found: {}'.format(target_id))
 
-					with db:
-						db.execute(sqll.is_set_0, (target_id,))
+					db_services.assign_is_set_0(target_id)
 					continue
 
 				if not submission.is_self:
 					# This shouldn't happen.
 					logger.warning('Note: non-is_self submission: {}'.format(target_id))
 
-					with db:
-						db.execute(sqll.is_ignored_1, (target_id,))
+					db_services.assign_is_ignored_1(target_id)
 					continue
 
 				is_deleted = submission.author is None and submission.selftext == '[deleted]'
@@ -94,8 +76,7 @@ WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 					elif is_removed:
 						logger.info('Skip: submission was removed: {}'.format(target_id))
 
-					with db:
-						db.execute(sqll.is_ignored_1, (target_id,))
+					db_services.assign_is_ignored_1(target_id)
 					continue
 
 				b = match_control.check_all(submission.selftext)
@@ -108,15 +89,13 @@ WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 						my_comment.refresh()
 					except praw.exceptions.PRAWException:
 						# The comment has disappeared. It may have been deleted.
-						with db:
-							db.execute(sqll.is_set_0, (target_id,))
+						db_services.assign_is_set_0(target_id)
 						continue
 
 					if len(my_comment.replies):
 						logger.info(f'Info: found replies on comment `{reply_id}`')
 
-						with db:
-							db.execute(sqll.is_obstructed_1, (target_id,))
+						db_services.assign_is_obstructed_1(target_id)
 
 					if topic_flags_0:
 						# The author has fixed their post. Success!
@@ -130,8 +109,7 @@ WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 								reply_id=my_comment.id)
 						my_comment.edit(message)
 
-						with db:
-							db.execute(sqll.is_satisfied_1, (target_id,))
+						db_services.assign_is_satisfied_1(target_id)
 
 						logger.info(f'Success: update comment (passing) `{reply_id}`')
 
@@ -145,8 +123,7 @@ WHERE is_set = 1 AND is_ignored = 0 AND is_satisfied = 0
 								reply_id=my_comment.id)
 						my_comment.edit(message)
 
-						with db:
-							db.execute(sqll.topic_flags, (b, target_id))
+						db_services.assign_topic_flags(b, target_id)
 
 						logger.info(f'Success: update comment (failing) `{reply_id}`')
 

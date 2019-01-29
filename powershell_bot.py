@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
 	from regex_checks import MatchBank, match_control
 	from utils import get_message, record_submission_reply
-	from db_access import get_t3_target_id
+	from db_services import get_t3_target_id
 
 def main():
 	script_path = Path(__file__).resolve()
