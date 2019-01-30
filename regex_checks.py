@@ -36,13 +36,13 @@ class MatchRule:
 
 class RegexHolder:
 	missing_code_block = re.compile((
-			r'^('
+			r'^ {0,3}('
 			r'(function|filter|workflow|class|enum) *[a-z_]\w* *\{'
 			r'|(switch|if|foreach) *\([^\)]+\) *\{'
 			r'|param *\('
 			r'|process *\{'
 			r'''|(PS C:\\[-\w\\]*> )?\w{3,}-\w{2,} (-\w+|@?'|@?"|\$[a-z]|[A-F]:\\)'''
-			r'|\$[a-z_][a-z0-9_]* *[=\|]'
+			r'|\$[a-z_]\w* *[=\|]'
 			r')'), re.I | re.M)
 
 	inline_code_lines = re.compile(r'^ {0,3}`(.*)`[\t ]*$', re.M)
