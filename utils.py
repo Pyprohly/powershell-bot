@@ -1,8 +1,6 @@
 
-import sqlite3
 from messages import MessageBank, messages
 from regex_checks import MatchBank
-from schema import get_connection
 
 def get_message(topic_flags, **kwargs):
 	if topic_flags & MatchBank.multiline_inline_code:
