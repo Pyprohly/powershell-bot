@@ -98,11 +98,25 @@ def main():
 				if len(my_comment.replies):
 					logger.info(f'Info: found replies on comment `{reply_id}`')
 
-					db_services.assign_is_deletable_1(target_id)
+					db_services.assign_is_deletable_0(target_id)
 
 				topic_flags_0 = b == 0
 				if topic_flags_0:
 					# The author has fixed their post. Success!
+
+					if time.time() - submission.created_utc < 60 * 3:
+						# If they've ninja edited then just delete the post.
+
+						if len(comment.replies):
+							logger.info(f'Skip: ninja edited, but there are replies: `{reply_id}`')
+							continue
+						if not db_services.is_deletable(reply_id):
+							logger.info(f'Skip: ninja edited, but not deletable: `{reply_id}`')
+							continue
+
+						my_comment.delete()
+						continue
+
 					message = get_message(topic_flags,
 							signature=2,
 							passed=True,
