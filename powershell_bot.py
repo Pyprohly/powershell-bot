@@ -87,12 +87,12 @@ def main():
 					logger.warning('Skip: already replied to: {}'.format(submission.permalink))
 					continue
 
-				logger.info('Process submission: {}'.format(submission.permalink))
-
 				b = match_control.check_all(submission.selftext)
 				if b == 0:
 					logger.info('Skip: no match: {}'.format(submission.permalink))
 					continue
+
+				logger.info('Process submission: {}'.format(submission.permalink))
 
 				message = get_message(b,
 						signature=1,
