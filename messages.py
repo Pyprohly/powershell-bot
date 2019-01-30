@@ -23,19 +23,21 @@ messages = MessageRegister()
 
 class MessageBank(Enum):
 	code_block_needed = auto()
-	inline_code_misuse = auto()
+	multiline_inline_code = auto()
 
 class MessageInventory:
-	code_block = '''Looks like your PowerShell code isn’t wrapped in a code block.
+	code_block_missing_message = '''Looks like your PowerShell code isn’t wrapped in a code block.
 
 To format code correctly on **new.reddit.com**, highlight the code and select *‘Code Block’* in the editing toolbar.
 
 If you’re on **old.reddit.com**, separate the code from your text with a blank line and precede each line of code with **4 spaces** or a **tab**.
 '''
 
-	inline_code = '''Looks like you used *inline code* formatting where a **code block** should have been used.
+	inline_code_message = '''Hi ${redditor},
 
-The inline code text styling is for use in paragraphs of text. For larger sequences of code, consider using a code bock. This can be done by selecting your code then clicking the *‘Code Block’* button.
+Looks like you used *inline code* formatting where a **code block** should have been used.
+
+The inline code text styling is for use in paragraphs of text. For larger sequences of code, consider using a code block. This can be done by selecting your code then clicking the *‘Code Block’* button.
 '''
 
 	message_break = '\n---\n\n'
@@ -50,23 +52,27 @@ The inline code text styling is for use in paragraphs of text. For larger sequen
 \tPassed: ${passed_count} Failed: ${failed_count}
 '''
 
-	@classmethod
-	def signature(cls, *, delete_message_url=None):
-		sb = '^('
-		sig_items = [cls.signature_beep_boop]
-		if delete_message_url:
-			sig_items.append(cls.signature_delete)
+	def code_block(**kwargs):
+		st = Template(MessageInventory.code_block_missing_message)
+		return st.substitute(kwargs)
 
-		sb += ' | '.join(sig_items)
-		sb += ')'
+	def inline_code(**kwargs):
+		st = Template(MessageInventory.inline_code_message)
+		return st.substitute(kwargs)
+
+	def signature(*, delete_message_url=None, **kwargs):
+		sig_items = [MessageInventory.signature_beep_boop]
+		if delete_message_url:
+			sig_items.append(MessageInventory.signature_delete)
+
+		sb = '^(' + ' | '.join(sig_items) + ')'
 
 		if delete_message_url:
-			sb += '\n\n{}: {}'.format(cls.signature_delete, delete_message_url)
+			sb += '\n\n{}: {}'.format(MessageInventory.signature_delete, delete_message_url)
 		return sb
 
-	@classmethod
-	def describing(cls, *, fixture_name='Thing', passed=False):
-		st = Template(cls.describing_message)
+	def describing(*, fixture_name='Thing', passed=False, **kwargs):
+		st = Template(MessageInventory.describing_message)
 		subs = {
 			'fixture_name': fixture_name,
 			'passing': '\N{WHITE HEAVY CHECK MARK}' if passed else '\N{CROSS MARK}',
@@ -77,7 +83,7 @@ The inline code text styling is for use in paragraphs of text. For larger sequen
 		return s
 
 class MessageMaker:
-	def get_signature(num=1, **kwargs):
+	def _get_signature(num=1, **kwargs):
 		sig = ''
 		if num == 1:
 			# Basic signature
@@ -98,7 +104,7 @@ class MessageMaker:
 
 		return sig
 
-	def get_fake_pester(**kwargs):
+	def _get_fake_pester(**kwargs):
 		describing_kwargs = {
 			'fixture_name': kwargs.pop('thing_kind', 'Thing'),
 			'passed': kwargs.pop('passed', False)
@@ -107,28 +113,28 @@ class MessageMaker:
 
 	@messages.register(MessageBank.code_block_needed)
 	def code_block_needed(*, signature=1, pester=True, **kwargs):
-		sb = MessageInventory.code_block
+		sb = MessageInventory.code_block(**kwargs)
 
 		if pester:
 			sb += MessageInventory.message_break
-			sb += MessageMaker.get_fake_pester(**kwargs)
+			sb += MessageMaker._get_fake_pester(**kwargs)
 		if signature:
 			sb += MessageInventory.message_break
-			sb += MessageMaker.get_signature(signature, **kwargs)
+			sb += MessageMaker._get_signature(signature, **kwargs)
 
 		sb += '\n'
 		return sb
 
-	@messages.register(MessageBank.inline_code_misuse)
-	def inline_code_misuse(*, signature=1, pester=True, **kwargs):
-		sb = MessageInventory.inline_code
+	@messages.register(MessageBank.multiline_inline_code)
+	def multiline_inline_code(*, signature=1, pester=True, **kwargs):
+		sb = MessageInventory.inline_code(**kwargs)
 
 		if pester:
 			sb += MessageInventory.message_break
-			sb += MessageMaker.get_fake_pester(**kwargs)
+			sb += MessageMaker._get_fake_pester(**kwargs)
 		if signature:
 			sb += MessageInventory.message_break
-			sb += MessageMaker.get_signature(signature, **kwargs)
+			sb += MessageMaker._get_signature(signature, **kwargs)
 
 		sb += '\n'
 		return sb

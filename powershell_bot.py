@@ -97,7 +97,8 @@ def main():
 				message = get_message(b,
 						signature=1,
 						passed=False,
-						thing_kind=type(submission).__name__)
+						thing_kind=type(submission).__name__,
+						redditor=submission.author.name)
 				reply = submission.reply(message)
 
 				message = get_message(b,

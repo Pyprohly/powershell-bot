@@ -50,18 +50,19 @@ class RegexHolder:
 
 class MatchBank(IntEnum):
 	missing_code_block = 1
-	inline_code_misuse = 2
+	multiline_inline_code = 2
+	very_long_inline_code = 4
 
 @MatchRule.create(
 		MatchBank.missing_code_block.name,
 		MatchBank.missing_code_block.value)
-def missing_code_block_rule(text):
+def missing_code_block(text):
 	return bool(RegexHolder.missing_code_block.search(text))
 
 @MatchRule.create(
-		MatchBank.inline_code_misuse.name,
-		MatchBank.inline_code_misuse.value)
-def missing_code_block_after_backtick_strip(text):
+		MatchBank.multiline_inline_code.name,
+		MatchBank.multiline_inline_code.value)
+def multiline_inline(text):
 	if not RegexHolder.consecutive_inline_code_lines.search(text):
 		# Avoid cases like t3_abqs9c
 		return False
@@ -73,6 +74,23 @@ def missing_code_block_after_backtick_strip(text):
 
 	return bool(RegexHolder.missing_code_block.search(new_text))
 
+@MatchRule.create(
+		MatchBank.very_long_inline_code.name,
+		MatchBank.very_long_inline_code.value)
+def long_inline_code(text):
+	span_length = None
+	for i, match in enumerate(RegexHolder.inline_code_lines.finditer(text)):
+		if i > 0:
+			return False
+		span_length = match.span(1)[1] - match.span(1)[0]
+	if span_length is None:
+		return False
+
+	if span_length > 120:
+		return True
+	return False
+
 match_control = MatchControl()
-match_control.add(missing_code_block_rule)
-match_control.add(missing_code_block_after_backtick_strip)
+match_control.add(missing_code_block)
+match_control.add(multiline_inline)
+match_control.add(long_inline_code)
