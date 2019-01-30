@@ -153,6 +153,12 @@ def main():
 					logger.info('[Inbox] Skip: not found: {}'.format(comment_id))
 					continue
 
+				request_by_authority = item.author.name.lower() in deletion_request_trustees
+				if request_by_authority:
+					comment.delete()
+					logger.info('[Inbox] Success: forced deletion: {}'.format(comment.permalink))
+					continue
+
 				submission_id = db_services.get_t3_target_id(comment_id)
 				if submission_id is None:
 					logger.warning('[Inbox] Error: could not retrieve target submission id from comment id: {}'.format(comment_id))
@@ -163,8 +169,7 @@ def main():
 					continue
 
 				request_by_op = item.author == submission.author
-				request_by_authority = item.author.name.lower() in deletion_request_trustees
-				if not (request_by_op or request_by_authority):
+				if not request_by_op:
 					logger.info('[Inbox] Skip: not permitted: {}'.format(comment.permalink))
 					continue
 
