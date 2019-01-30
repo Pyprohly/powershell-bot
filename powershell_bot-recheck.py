@@ -11,7 +11,7 @@ import praw, prawcore
 
 from regex_checks import match_control
 from config import praw_config
-from utils import get_message
+from messages import get_message
 import db_services
 
 def main():

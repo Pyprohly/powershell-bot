@@ -13,7 +13,7 @@ if __name__ == '__main__':
 	import re
 
 	from regex_checks import match_control
-	from utils import get_message
+	from messages import get_message
 	import db_services
 
 def main():

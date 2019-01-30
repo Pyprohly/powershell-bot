@@ -3,6 +3,8 @@ from enum import Enum, auto
 from string import Template
 from urllib.parse import urlencode
 
+from regex_checks import MatchBank
+
 class MessageRegister:
 	def __init__(self, dispatch_table=None):
 		self.dispatch = dict() if dispatch_table is None else dispatch_table
@@ -138,3 +140,12 @@ class MessageMaker:
 
 		sb += '\n'
 		return sb
+
+def get_message(topic_flags, **kwargs):
+	if topic_flags & MatchBank.multiline_inline_code:
+		return messages[MessageBank.multiline_inline_code](**kwargs)
+	elif topic_flags & MatchBank.very_long_inline_code:
+		return messages[MessageBank.multiline_inline_code](**kwargs)
+	elif topic_flags & MatchBank.missing_code_block:
+		return messages[MessageBank.code_block_needed](**kwargs)
+	return None
