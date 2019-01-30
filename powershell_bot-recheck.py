@@ -115,6 +115,7 @@ def main():
 							continue
 
 						my_comment.delete()
+						db_services.assign_is_set_0(target_id)
 						continue
 
 					message = get_message(topic_flags,
