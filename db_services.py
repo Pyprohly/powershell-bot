@@ -6,7 +6,7 @@ from schema import get_connection
 db = get_connection()
 
 forget_after = 60 * 60 * 24 * 7 # 7 days
-forget_acknowledged_after = 60 * 60 * 24 * 100# 1 day
+forget_acknowledged_after = 60 * 60 * 24 # 1 day
 
 sql_lines = SimpleNamespace()
 sql_lines.is_set_0 = 'UPDATE t3_reply SET is_set=0 WHERE target_id=?'
@@ -43,16 +43,15 @@ sql_lines.record_submission_reply_insert = '''INSERT INTO t3_reply (
 	is_deletable)
 VALUES (?,?,?,?,?,?,?,?)
 '''
+sql_lines.target_id_exists = 'SELECT 1 FROM t3_reply WHERE target_id=?'
 
 def record_submission_reply(submission, comment_reply, topic_flags=0):
 	target_id = submission.id
 	reply_id = comment_reply.id
 	target_created = submission.created_utc
 
-	db = get_connection()
-
-	sql = 'SELECT 1 FROM t3_reply WHERE target_id=?'
-	c = db.execute(sql, (target_id,))
+	with db:
+		c = db.execute(sql_lines.target_id_exists, (target_id,))
 	if c.fetchone():
 		# The target id is already in the database.
 		# This shouldn't happen, but update the fields just in case.
@@ -65,13 +64,15 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 			db.execute(sql_lines.record_submission_reply_insert, (target_id, reply_id, target_created, topic_flags, None, 1, 0, 1))
 
 def revisit():
-	c = db.execute(sql_lines.revisit)
+	with db:
+		c = db.execute(sql_lines.revisit)
 	for row in c:
 		yield row
 
 def get_t3_target_id(t1_reply_id):
 	sql = 'SELECT target_id FROM t3_reply WHERE reply_id=?'
-	c = db.execute(sql, (t1_reply_id,))
+	with db:
+		c = db.execute(sql, (t1_reply_id,))
 	result = c.fetchone()
 	if result is None:
 		return None
@@ -79,7 +80,8 @@ def get_t3_target_id(t1_reply_id):
 
 def is_deletable(t1_reply_id):
 	sql = 'SELECT is_deletable FROM t3_reply WHERE reply_id=?'
-	c = db.execute(sql, (t1_reply_id,))
+	with db:
+		c = db.execute(sql, (t1_reply_id,))
 	result = c.fetchone()
 	if result is None:
 		return True
