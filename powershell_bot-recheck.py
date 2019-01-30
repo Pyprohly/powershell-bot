@@ -107,7 +107,7 @@ def main():
 					if time.time() - submission.created_utc < 60 * 3:
 						# If they've ninja edited then just delete the post.
 
-						if len(comment.replies):
+						if len(my_comment.replies):
 							logger.info(f'Skip: ninja edited, but there are replies: `{reply_id}`')
 							continue
 						if not db_services.is_deletable(reply_id):
