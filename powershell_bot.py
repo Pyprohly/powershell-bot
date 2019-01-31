@@ -156,12 +156,13 @@ def main():
 				request_by_authority = item.author.name.lower() in deletion_request_trustees
 				if request_by_authority:
 					comment.delete()
+					db_services.assign_is_set_0(target_id)
 					logger.info('[Inbox] Success: forced deletion: {}'.format(comment.permalink))
 					continue
 
 				submission_id = db_services.get_target_id(comment_id)
 				if submission_id is None:
-					logger.warning('[Inbox] Error: could not retrieve target submission id from comment id: {}'.format(comment_id))
+					logger.warning('[Inbox] Warning: could not resolve target submission id from comment id: {}'.format(comment_id))
 				submission = reddit.submission(submission_id)
 
 				if comment.author != me:

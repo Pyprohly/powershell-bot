@@ -114,6 +114,7 @@ def main():
 
 						my_comment.delete()
 						db_services.assign_is_set_0(target_id)
+						logger.info(f'Success: delete, ninja edited: `{reply_id}`')
 						continue
 
 					message = get_message(topic_flags,
