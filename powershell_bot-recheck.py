@@ -6,7 +6,6 @@ import os
 import time
 import logging, logging.handlers
 from pathlib import Path
-from types import SimpleNamespace
 import praw, prawcore
 
 from regex_checks import match_control
@@ -49,7 +48,6 @@ def main():
 				target_id = row['target_id']
 				reply_id = row['reply_id']
 				topic_flags = row['topic_flags']
-				previous_topic_flags = row['previous_topic_flags']
 
 				submission = reddit.submission(target_id)
 				try:

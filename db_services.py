@@ -1,7 +1,7 @@
 
 import time
 from types import SimpleNamespace
-from sqlalchemy.sql import select, insert, update, exists, bindparam, and_, or_
+from sqlalchemy.sql import select, insert, update, exists, bindparam, and_
 from schema import engine, t3_reply
 
 forget_after = 60 * 60 * 24 * 3 # 3 days
@@ -93,14 +93,14 @@ def get_target_id(reply_id):
 		return None
 	return row[t3_reply.c.target_id]
 
-def is_deletable(t1_reply_id):
+def is_deletable(reply_id):
 	sql = select([t3_reply.c.is_deletable]).where(t3_reply.c.reply_id == reply_id)
 	with engine.connect() as conn:
 		results = conn.execute(sql)
 		row = results.first()
 	if row is None:
 		return True
-	return bool(result[t3_reply.c.is_deletable])
+	return bool(row[t3_reply.c.is_deletable])
 
 def assign_is_set_0(target_id):
 	with engine.connect() as conn:
