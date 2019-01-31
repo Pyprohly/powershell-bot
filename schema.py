@@ -10,6 +10,7 @@ metadata = MetaData()
 t3_reply = Table('t3_reply', metadata,
 		Column('id', Integer, primary_key=True),
 		Column('target_id', String(8), unique=True),
+		Column('author_name', String(21)),
 		Column('reply_id', String(8)),
 		Column('target_created', Integer),
 		Column('topic_flags', Integer),

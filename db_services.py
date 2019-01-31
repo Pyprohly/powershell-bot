@@ -22,6 +22,7 @@ sql_lines.revisit = select([t3_reply]) \
 
 sql_lines.record_submission_reply_update = update(t3_reply) \
 		.values(
+			author_name=bindparam('b_author_name'),
 			reply_id=bindparam('b_reply_id'),
 			target_created=bindparam('b_target_created'),
 			topic_flags=bindparam('b_topic_flags'),
@@ -34,6 +35,7 @@ sql_lines.record_submission_reply_update = update(t3_reply) \
 sql_lines.record_submission_reply_insert = insert(t3_reply) \
 		.values(
 			target_id=bindparam('b_target_id'),
+			author_name=bindparam('b_author_name'),
 			reply_id=bindparam('b_reply_id'),
 			target_created=bindparam('b_target_created'),
 			topic_flags=bindparam('b_topic_flags'),
@@ -48,6 +50,7 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 	target_id = submission.id
 	reply_id = comment_reply.id
 	target_created = submission.created_utc
+	author_name = submission.author.name
 
 	with engine.connect() as conn:
 		result = conn.execute(sql_lines.target_id_exists, b_target_id=target_id)
@@ -58,6 +61,7 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 
 		with engine.connect() as conn:
 			conn.execute(sql_lines.record_submission_reply_update,
+					b_author_name=author_name,
 					b_reply_id=reply_id,
 					b_target_created=target_created,
 					b_topic_flags=topic_flags,
@@ -70,6 +74,7 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 		with engine.connect() as conn:
 			conn.execute(sql_lines.record_submission_reply_insert,
 				b_target_id=target_id,
+				b_author_name=author_name,
 				b_reply_id=reply_id,
 				b_target_created=target_created,
 				b_topic_flags=topic_flags,
@@ -92,6 +97,15 @@ def get_target_id(reply_id):
 	if row is None:
 		return None
 	return row[t3_reply.c.target_id]
+
+def get_author_name(target_id):
+	sql = select([t3_reply.c.author_name]).where(t3_reply.c.target_id == target_id)
+	with engine.connect() as conn:
+		results = conn.execute(sql)
+		row = results.first()
+	if row is None:
+		return None
+	return row[t3_reply.c.author_name]
 
 def is_deletable(reply_id):
 	sql = select([t3_reply.c.is_deletable]).where(t3_reply.c.reply_id == reply_id)

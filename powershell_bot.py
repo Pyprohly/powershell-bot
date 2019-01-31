@@ -153,25 +153,35 @@ def main():
 					logger.info('[Inbox] Skip: not found: {}'.format(comment_id))
 					continue
 
-				request_by_authority = item.author.name.lower() in deletion_request_trustees
-				if request_by_authority:
+				target_id = db_services.get_target_id(comment_id)
+				if target_id is None:
+					logger.warning('[Inbox] Warning: could not resolve target_id from comment id: {}'.format(comment_id))
+
+				by_authority = item.author.name.lower() in deletion_request_trustees
+				if by_authority:
 					comment.delete()
-					db_services.assign_is_set_0(target_id)
-					logger.info('[Inbox] Success: forced deletion: {}'.format(comment.permalink))
+
+					if target_id is not None:
+						db_services.assign_is_set_0(target_id)
+
+					logger.info('[Inbox] Success: force delete: {}'.format(comment.permalink))
 					continue
 
-				submission_id = db_services.get_target_id(comment_id)
-				if submission_id is None:
-					logger.warning('[Inbox] Warning: could not resolve target submission id from comment id: {}'.format(comment_id))
-				submission = reddit.submission(submission_id)
+				if target_id is None:
+					logger.warning('[Inbox] Skip: cannot resolve author_name from null target_id: {}'.format(comment_id))
+
+				author_name = db_services.get_author_name(target_id)
+				if author_name is None:
+					logger.warning('[Inbox] Skip: could not resolve author_name from target_id: {}'.format(comment_id))
+					continue
 
 				if comment.author != me:
 					logger.info('[Inbox] Skip: not owned: {}'.format(comment.permalink))
 					continue
 
-				request_by_op = item.author == submission.author
-				if not request_by_op:
-					logger.info('[Inbox] Skip: not permitted: {}'.format(comment.permalink))
+				by_op = item.author == author_name
+				if not by_op:
+					logger.info('[Inbox] Skip: delete not permitted: {}'.format(comment.permalink))
 					continue
 
 				if len(comment.replies):
@@ -183,6 +193,7 @@ def main():
 					continue
 
 				comment.delete()
+				db_services.assign_is_set_0(target_id)
 
 				logger.info('[Inbox] Success: deleted: {}'.format(comment.permalink))
 
