@@ -66,13 +66,13 @@ def main():
 					break
 
 				if submission.id in seen_deque['submission']:
-					logger.debug('Skip: seen item: {}'.format(submission.id))
+					logger.debug('Skip: seen item: t3_{}'.format(submission.id))
 					continue
 				if submission.created_utc < check_time['submission']:
 					if submission.created_utc < start_time:
-						logger.debug('Skip: item was submitted before bot started: {}'.format(submission.id))
+						logger.debug('Skip: item was submitted before bot started: t3_{}'.format(submission.id))
 					else:
-						logger.debug('Skip: item was seen or timestamp was supplanted: {}'.format(submission.id))
+						logger.debug('Skip: item was seen or timestamp was supplanted: t3_{}'.format(submission.id))
 					continue
 				check_time['submission'] += control_checkpoint_progression(submission.created_utc - check_time['submission'])
 				seen_deque['submission'].append(submission.id)
@@ -117,19 +117,19 @@ def main():
 					break
 
 				if item.id in seen_deque['inbox']:
-					logger.debug('[Inbox] Skip: seen item: {}'.format(item.id))
+					logger.debug('[Inbox] Skip: seen item: t4_{}'.format(item.id))
 					continue
 				if item.created_utc < check_time['inbox']:
 					if item.created_utc < start_time:
-						logger.debug('[Inbox] Skip: item was submitted before bot started: {}'.format(item.id))
+						logger.debug('[Inbox] Skip: item was submitted before bot started: t4_{}'.format(item.id))
 					else:
-						logger.debug('[Inbox] Skip: item was seen or timestamp was supplanted: {}'.format(item.id))
+						logger.debug('[Inbox] Skip: item was seen or timestamp was supplanted: t4_{}'.format(item.id))
 					continue
 				check_time['inbox'] += control_checkpoint_progression(item.created_utc - check_time['inbox'])
 				seen_deque['inbox'].append(item.id)
 
 				if item.was_comment:
-					logger.info('[Inbox] Skip: ignore non-`Message` item: {}'.format(item.id))
+					logger.info('[Inbox] Skip: ignore non-`Message` item: t4_{}'.format(item.id))
 					continue
 
 				if time.time() - item.created_utc > ignore_inbox_items_older_than:
@@ -138,10 +138,10 @@ def main():
 
 				match = delete_regexp.match(item.subject)
 				if not match:
-					logger.info('[Inbox] Skip: no match (subject line): {}'.format(item.id))
+					logger.info('[Inbox] Skip: no match (subject line): t4_{}'.format(item.id))
 					continue
 
-				logger.info('[Inbox] Process inbox item (from /u/{}): {}'.format(item.author.name, item.id))
+				logger.info('[Inbox] Process inbox item (from /u/{}): t4_{}'.format(item.author.name, item.id))
 
 				item.mark_read()
 
@@ -150,12 +150,12 @@ def main():
 				try:
 					comment.refresh()
 				except praw.exceptions.PRAWException:
-					logger.info('[Inbox] Skip: not found: {}'.format(comment_id))
+					logger.info('[Inbox] Skip: not found: t1_{}'.format(comment_id))
 					continue
 
 				target_id = db_services.get_target_id(comment_id)
 				if target_id is None:
-					logger.warning('[Inbox] Warning: could not resolve target_id from comment id: {}'.format(comment_id))
+					logger.warning('[Inbox] Warning: could not resolve target_id from comment: t1_{}'.format(comment_id))
 
 				by_authority = item.author.name.lower() in deletion_request_trustees
 				if by_authority:
@@ -168,11 +168,11 @@ def main():
 					continue
 
 				if target_id is None:
-					logger.warning('[Inbox] Skip: cannot resolve author_name from null target_id: {}'.format(comment_id))
+					logger.warning('[Inbox] Skip: cannot resolve author_name from null target_id: t1_{}'.format(comment_id))
 
 				author_name = db_services.get_author_name(target_id)
 				if author_name is None:
-					logger.warning('[Inbox] Skip: could not resolve author_name from target_id: {}'.format(comment_id))
+					logger.warning('[Inbox] Skip: could not resolve author_name from target_id: t1_{}'.format(comment_id))
 					continue
 
 				if comment.author != me:

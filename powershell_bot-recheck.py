@@ -55,14 +55,14 @@ def main():
 				except prawcore.exceptions.NotFound:
 					# This should never happen, even if the submission was deleted.
 					# Avoid processing it in future.
-					logger.warning('Skip: recorded submission not found: {}'.format(target_id))
+					logger.warning('Skip: recorded submission not found: t3_{}'.format(target_id))
 
 					db_services.assign_is_set_0(target_id)
 					continue
 
 				if not submission.is_self:
 					# This shouldn't happen.
-					logger.warning('Note: non-is_self submission: {}'.format(target_id))
+					logger.warning('Note: non-is_self submission: t3_{}'.format(target_id))
 
 					db_services.assign_is_ignored_1(target_id)
 					continue
@@ -71,9 +71,9 @@ def main():
 				is_removed = submission.selftext == '[removed]'
 				if is_deleted or is_removed:
 					if is_deleted:
-						logger.info('Skip: submission was deleted: {}'.format(target_id))
+						logger.info('Skip: submission was deleted: t3_{}'.format(target_id))
 					elif is_removed:
-						logger.info('Skip: submission was removed: {}'.format(target_id))
+						logger.info('Skip: submission was removed: t3_{}'.format(target_id))
 
 					db_services.assign_is_ignored_1(target_id)
 					continue
@@ -82,7 +82,7 @@ def main():
 
 				topic_flags_changed = b != topic_flags
 				if not topic_flags_changed:
-					logger.debug('Skip: no change: {}'.format(target_id))
+					logger.debug('Skip: no change: t3_{}'.format(target_id))
 					continue
 
 				my_comment = reddit.comment(reply_id)
@@ -94,7 +94,7 @@ def main():
 					continue
 
 				if len(my_comment.replies):
-					logger.info(f'Info: found replies on comment `{reply_id}`')
+					logger.info(f'Info: found replies on comment t1_`{reply_id}`')
 
 					db_services.assign_is_deletable_0(target_id)
 
@@ -106,15 +106,15 @@ def main():
 						# If they've ninja edited then just delete the post.
 
 						if len(my_comment.replies):
-							logger.info(f'Skip: ninja edited, but there are replies: `{reply_id}`')
+							logger.info(f'Skip: ninja edited, but there are replies: t1_`{reply_id}`')
 							continue
 						if not db_services.is_deletable(reply_id):
-							logger.info(f'Skip: ninja edited, but not deletable: `{reply_id}`')
+							logger.info(f'Skip: ninja edited, but not deletable: t1_`{reply_id}`')
 							continue
 
 						my_comment.delete()
 						db_services.assign_is_set_0(target_id)
-						logger.info(f'Success: delete, ninja edited: `{reply_id}`')
+						logger.info(f'Success: delete, ninja edited: t1_`{reply_id}`')
 						continue
 
 					message = get_message(topic_flags,
@@ -125,7 +125,7 @@ def main():
 							bot_name=me.name,
 							reply_id=my_comment.id)
 					my_comment.edit(message)
-					logger.info(f'Success: update comment (passing) `{reply_id}`')
+					logger.info(f'Success: update comment (passing) t1_`{reply_id}`')
 				else:
 					# topic_flags have changed but markdown still not fixed yet.
 					message = get_message(b,
@@ -136,7 +136,7 @@ def main():
 							bot_name=me.name,
 							reply_id=my_comment.id)
 					my_comment.edit(message)
-					logger.info(f'Success: update comment (failing) `{reply_id}`')
+					logger.info(f'Success: update comment (failing) t1_`{reply_id}`')
 
 				db_services.assign_topic_flags(b, target_id)
 				db_services.assign_previous_topic_flags(topic_flags, target_id)
