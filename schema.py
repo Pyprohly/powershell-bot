@@ -1,31 +1,25 @@
 
-import sqlite3
+from sqlalchemy.schema import Table, MetaData, Column
+from sqlalchemy.types import Integer, String, Boolean
+from sqlalchemy.engine import create_engine
 
-db_file = './database.db'
+db_url = 'sqlite:///database.db'
+engine = create_engine(db_url, echo=False)
 
-def get_connection():
-	con = sqlite3.connect(db_file)
-	con.row_factory = sqlite3.Row
-	return con
+metadata = MetaData()
+t3_reply = Table('t3_reply', metadata,
+		Column('id', Integer, primary_key=True),
+		Column('target_id', String(8), unique=True),
+		Column('reply_id', String(8)),
+		Column('target_created', Integer),
+		Column('topic_flags', Integer),
+		Column('previous_topic_flags', Integer),
+		Column('is_set', Boolean),
+		Column('is_ignored', Boolean),
+		Column('is_deletable', Boolean))
 
 def create_database():
-	db = get_connection()
-	db.executescript('''CREATE TABLE IF NOT EXISTS t3_reply (
-	id INTEGER PRIMARY KEY,
-	target_id TEXT UNIQUE,
-	reply_id TEXT,
-	target_created INTEGER,
-	topic_flags INTEGER,
-	previous_topic_flags INTEGER,
-	is_set BOOLEAN,
-	is_ignored BOOLEAN,
-	is_deletable BOOLEAN,
-	CHECK (is_set IN (0, 1)),
-	CHECK (is_ignored IN (0, 1)),
-	CHECK (is_deletable IN (0, 1))
-);
-''')
-	db.commit()
+	metadata.create_all(engine)
 
 if __name__ != '__main__':
 	create_database()

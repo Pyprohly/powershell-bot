@@ -159,7 +159,7 @@ def main():
 					logger.info('[Inbox] Success: forced deletion: {}'.format(comment.permalink))
 					continue
 
-				submission_id = db_services.get_t3_target_id(comment_id)
+				submission_id = db_services.get_target_id(comment_id)
 				if submission_id is None:
 					logger.warning('[Inbox] Error: could not retrieve target submission id from comment id: {}'.format(comment_id))
 				submission = reddit.submission(submission_id)
