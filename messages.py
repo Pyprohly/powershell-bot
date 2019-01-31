@@ -44,7 +44,7 @@ The inline code text styling is for use in paragraphs of text. For larger sequen
 
 	message_break = '\n---\n\n'
 
-	signature_beep_boop = '*Beep-boop, I am a bot.*'
+	signature_beep_boop = '*Beep-boop. I am a bot.*'
 	signature_delete = '[Remove-Item]'
 	delete_message = (
 			'Deletion requests can only be made by the OP. A comment with replies on it cannot be removed.\n')
