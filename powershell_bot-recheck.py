@@ -157,7 +157,7 @@ def main():
 				time.sleep(5)
 
 			elif isinstance(e, prawcore.exceptions.RequestException):
-				logger.info('Exception: RequestException: {}'.format(e.original_exception), exc_info=True)
+				logger.info('Exception: RequestException: {}'.format(e))
 				time.sleep(5)
 
 			else:
