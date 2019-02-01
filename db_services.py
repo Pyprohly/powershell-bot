@@ -130,8 +130,8 @@ def assign_is_deletable_0(target_id):
 
 def assign_topic_flags(topic_flags, target_id):
 	with engine.connect() as conn:
-		conn.execute(sql_lines.is_ignored_1, b_topic_flags=topic_flags, b_target_id=target_id)
+		conn.execute(sql_lines.topic_flags, b_topic_flags=topic_flags, b_target_id=target_id)
 
 def assign_previous_topic_flags(topic_flags, target_id):
 	with engine.connect() as conn:
-		conn.execute(sql_lines.is_ignored_1, b_topic_flags=topic_flags, b_target_id=target_id)
+		conn.execute(sql_lines.previous_topic_flags, b_previous_topic_flags=topic_flags, b_target_id=target_id)
