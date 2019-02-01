@@ -21,6 +21,3 @@ t3_reply = Table('t3_reply', metadata,
 
 def create_database():
 	metadata.create_all(engine)
-
-if __name__ != '__main__':
-	create_database()
