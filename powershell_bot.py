@@ -40,7 +40,7 @@ def main():
 
 		logger.info('Log ({}): {}'.format(logger.name, log_file.absolute()))
 
-	delete_command_pattern = r'^!delete +(\w{1,12})$'
+	delete_command_pattern = r'^!delete +(?:t1_)?(\w{1,12})$'
 	delete_regexp = re.compile(delete_command_pattern, re.I)
 
 	ignore_inbox_items_older_than = 60 * 2
