@@ -7,17 +7,17 @@ from schema import engine, t3_reply
 forget_after = 60 * 60 * 24 * 3 # 3 days
 
 sql_lines = SimpleNamespace()
-sql_lines.is_set_0 = update(t3_reply).values(is_set=0).where(t3_reply.c.target_id == bindparam('b_target_id'))
-sql_lines.is_ignored_1 = update(t3_reply).values(is_ignored=1).where(t3_reply.c.target_id == bindparam('b_target_id'))
-sql_lines.is_deletable_0 = update(t3_reply).values(is_deletable=0).where(t3_reply.c.target_id == bindparam('b_target_id'))
+sql_lines.is_set_0 = update(t3_reply).values(is_set=False).where(t3_reply.c.target_id == bindparam('b_target_id'))
+sql_lines.is_ignored_1 = update(t3_reply).values(is_ignored=True).where(t3_reply.c.target_id == bindparam('b_target_id'))
+sql_lines.is_deletable_0 = update(t3_reply).values(is_deletable=False).where(t3_reply.c.target_id == bindparam('b_target_id'))
 sql_lines.topic_flags = update(t3_reply).values(topic_flags=bindparam('b_topic_flags')).where(t3_reply.c.target_id == bindparam('b_target_id'))
 sql_lines.previous_topic_flags = update(t3_reply).values(previous_topic_flags=bindparam('b_previous_topic_flags')).where(t3_reply.c.target_id == bindparam('b_target_id'))
 
 sql_lines.revisit = select([t3_reply]) \
 		.where(
 			and_(
-				t3_reply.c.is_set == 1,
-				t3_reply.c.is_ignored == 0,
+				t3_reply.c.is_set == True,
+				t3_reply.c.is_ignored == False,
 				bindparam('b_current_epoch') - t3_reply.c.target_created <= forget_after))
 
 sql_lines.record_submission_reply_update = update(t3_reply) \
@@ -66,9 +66,9 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 					b_target_created=target_created,
 					b_topic_flags=topic_flags,
 					b_previous_topic_flags=None,
-					b_is_set=1,
-					b_is_ignored=0,
-					b_is_deletable=1,
+					b_is_set=True,
+					b_is_ignored=False,
+					b_is_deletable=True,
 					b_target_id=target_id)
 	else:
 		with engine.connect() as conn:
@@ -79,9 +79,9 @@ def record_submission_reply(submission, comment_reply, topic_flags=0):
 				b_target_created=target_created,
 				b_topic_flags=topic_flags,
 				b_previous_topic_flags=None,
-				b_is_set=1,
-				b_is_ignored=0,
-				b_is_deletable=1)
+				b_is_set=True,
+				b_is_ignored=False,
+				b_is_deletable=True)
 
 def revisit():
 	with engine.connect() as conn:

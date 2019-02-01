@@ -2,8 +2,8 @@
 from sqlalchemy.schema import Table, MetaData, Column
 from sqlalchemy.types import Integer, String, Boolean
 from sqlalchemy.engine import create_engine
+from config import db_url
 
-db_url = 'sqlite:///database.db'
 engine = create_engine(db_url, echo=False)
 
 metadata = MetaData()
