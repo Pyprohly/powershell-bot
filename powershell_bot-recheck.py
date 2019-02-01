@@ -146,13 +146,13 @@ def main():
 		except (praw.exceptions.PRAWException, prawcore.exceptions.PrawcoreException) as e:
 			if isinstance(e, praw.exceptions.APIException):
 				if e.error_type == 'RATELIMIT':
-					logger.info('Exception: ratelimit exceeded: {}'.format(e.message), exc_info=True)
+					logger.info('Exception: ratelimit exceeded: {}'.format(e.message))
 					time.sleep(11*60)
 				else:
 					logger.warning('Exception: unhandled PRAW APIException exception:', exc_info=True)
 
 			elif isinstance(e, prawcore.exceptions.ResponseException):
-				logger.info('Exception: ResponseException: {}'.format(e.response), exc_info=True)
+				logger.info('Exception: ResponseException: {}'.format(e.response))
 				time.sleep(5)
 
 			elif isinstance(e, prawcore.exceptions.RequestException):
