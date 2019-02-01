@@ -96,18 +96,24 @@ def main():
 
 				message = get_message(b,
 						signature=1,
+						pester=True,
 						passed=False,
 						thing_kind=type(submission).__name__,
-						redditor=submission.author.name)
+						redditor=submission.author.name,
+						old_reddit_permalink='https://old.reddit.com' + submission.permalink,
+						new_reddit_permalink='https://new.reddit.com' + submission.permalink)
 				reply = submission.reply(message)
 
 				message = get_message(b,
 						signature=2,
+						pester=True,
 						passed=False,
 						thing_kind=type(submission).__name__,
 						redditor=submission.author.name,
 						bot_name=me.name,
-						reply_id=reply.id)
+						reply_id=reply.id,
+						old_reddit_permalink='https://old.reddit.com' + submission.permalink,
+						new_reddit_permalink='https://new.reddit.com' + submission.permalink)
 				reply.edit(message)
 
 				db_services.record_submission_reply(submission, reply, b)

@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from sqlalchemy.sql import select, insert, update, exists, bindparam, and_
 from schema import engine, t3_reply
 
-forget_after = 60 * 60 * 24 * 3 # 3 days
+forget_after = 60 * 60 * 24 * 30 # 3 days
 
 sql_lines = SimpleNamespace()
 sql_lines.is_set_0 = update(t3_reply).values(is_set=False).where(t3_reply.c.target_id == bindparam('b_target_id'))

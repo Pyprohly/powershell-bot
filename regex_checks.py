@@ -48,10 +48,13 @@ class RegexHolder:
 	inline_code_lines = re.compile(r'^ {0,3}`(.*)`[\t ]*$', re.M)
 	consecutive_inline_code_lines = re.compile(r'^ {0,3}`(.*)`[\t ]*\n\n?`.*\n\n?`', re.M)
 
+	code_fence = re.compile(r'^```.*?\n(.*?)```', re.M | re.S)
+
 class MatchBank(IntEnum):
 	missing_code_block = 1
 	multiline_inline_code = 2
 	very_long_inline_code = 4
+	code_fence = 8
 
 @MatchRule.create(
 		MatchBank.missing_code_block.name,
@@ -90,7 +93,14 @@ def long_inline_code(text):
 		return True
 	return False
 
+@MatchRule.create(
+		MatchBank.code_fence.name,
+		MatchBank.code_fence.value)
+def code_fence_found(text):
+	return bool(RegexHolder.code_fence.search(text))
+
 match_control = MatchControl()
 match_control.add(missing_code_block)
 match_control.add(multiline_inline)
 match_control.add(long_inline_code)
+match_control.add(code_fence_found)

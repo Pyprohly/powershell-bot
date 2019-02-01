@@ -119,22 +119,28 @@ def main():
 
 					message = get_message(topic_flags,
 							signature=2,
+							pester=True,
 							passed=True,
 							thing_kind=type(submission).__name__,
 							redditor=submission.author.name,
 							bot_name=me.name,
-							reply_id=my_comment.id)
+							reply_id=my_comment.id,
+							old_reddit_permalink='https://old.reddit.com' + submission.permalink,
+							new_reddit_permalink='https://new.reddit.com' + submission.permalink)
 					my_comment.edit(message)
 					logger.info(f'Success: update comment (passing) t1_`{reply_id}`')
 				else:
 					# topic_flags have changed but markdown still not fixed yet.
 					message = get_message(b,
 							signature=2,
+							pester=True,
 							passed=False,
 							thing_kind=type(submission).__name__,
 							redditor=submission.author.name,
 							bot_name=me.name,
-							reply_id=my_comment.id)
+							reply_id=my_comment.id,
+							old_reddit_permalink='https://old.reddit.com' + submission.permalink,
+							new_reddit_permalink='https://new.reddit.com' + submission.permalink)
 					my_comment.edit(message)
 					logger.info(f'Success: update comment (failing) t1_`{reply_id}`')
 

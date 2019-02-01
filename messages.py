@@ -26,30 +26,53 @@ messages = MessageRegister()
 class MessageBank(Enum):
 	code_block_needed = auto()
 	multiline_inline_code = auto()
+	long_inline_code = auto()
+	code_fence = auto()
 
 class MessageInventory:
 	code_block_missing_message = '''Looks like your PowerShell code isn’t wrapped in a code block.
 
-To format code correctly on **new.reddit.com**, highlight the code and select *‘Code Block’* in the editing toolbar.
+To format code correctly on **new reddit** (*[new.reddit.com]*), highlight the code and select *‘Code Block’* in the editing toolbar.
 
-If you’re on **old.reddit.com**, separate the code from your text with a blank line and precede each line of code with **4 spaces** or a **tab**.
+If you’re on **[old.reddit.com]**, separate the code from your text with a blank line and precede each line of code with **4 spaces** or a **tab**.
+
+[old.reddit.com]: ${old_reddit_permalink}
+[new.reddit.com]: ${new_reddit_permalink}
 '''
 
-	inline_code_message = '''Hi ${redditor},
-
-Looks like you used *inline code* formatting where a **code block** should have been used.
+	inline_code_message = '''Looks like you used *inline code* formatting where a **code block** should have been used.
 
 The inline code text styling is for use in paragraphs of text. For larger sequences of code, consider using a code block. This can be done by selecting your code then clicking the *‘Code Block’* button.
 '''
 
-	message_break = '\n---\n\n'
+	long_inline_code_message = '''That’s a very long stretch of inline code.
+
+Note that on **[old.reddit.com]** inline code blocks do not word wrap, making it difficult for many of us to see all your code.
+
+To ensure your code is readable by everyone, on **new reddit** (*[new.reddit.com]*), highlight the code and select *‘Code Block’* in the editing toolbar.
+
+If you’re on **[old.reddit.com]**, separate the code from your text with a blank line and precede each line of code with **4 spaces** or a **tab**.
+
+[old.reddit.com]: ${old_reddit_permalink}
+[new.reddit.com]: ${new_reddit_permalink}
+'''
+
+	code_fence_message = '''Code fences are a new feature on reddit and won’t render for those viewing your post on **[old.reddit.com]**. Because of this its use is discouraged.
+
+If you want those viewing from old reddit to see formatted PowerShell code then consider using a regular **code block**. This can be easily be done on **new reddit** (*[new.reddit.com]*) by highlighting your code and selecting *‘Code Block’* in the editing toolbar.
+
+[old.reddit.com]: ${old_reddit_permalink}
+[new.reddit.com]: ${new_reddit_permalink}
+'''
+
+	thematic_break = '\n---\n\n'
 
 	signature_beep_boop = '*Beep-boop. I am a bot.*'
 	signature_delete = '[Remove-Item]'
 	delete_message = (
 			'Deletion requests can only be made by the OP. A comment with replies on it cannot be removed.\n')
 
-	describing_message = '''\tDescribing ${fixture_name}
+	describing_message = '''\tDescribing ${fixture}
 \t[${passing}] Demonstrates good markdown
 \tPassed: ${passed_count} Failed: ${failed_count}
 '''
@@ -60,6 +83,14 @@ The inline code text styling is for use in paragraphs of text. For larger sequen
 
 	def inline_code(**kwargs):
 		st = Template(MessageInventory.inline_code_message)
+		return st.substitute(kwargs)
+
+	def long_inline_code(**kwargs):
+		st = Template(MessageInventory.long_inline_code_message)
+		return st.substitute(kwargs)
+
+	def code_fence(**kwargs):
+		st = Template(MessageInventory.code_fence_message)
 		return st.substitute(kwargs)
 
 	def signature(*, delete_message_url=None, **kwargs):
@@ -73,14 +104,23 @@ The inline code text styling is for use in paragraphs of text. For larger sequen
 			sb += '\n\n{}: {}'.format(MessageInventory.signature_delete, delete_message_url)
 		return sb
 
-	def describing(*, fixture_name='Thing', passed=False, **kwargs):
+	def describing(*, fixture='Thing', passed=0, **kwargs):
 		st = Template(MessageInventory.describing_message)
-		subs = {
-			'fixture_name': fixture_name,
-			'passing': '\N{WHITE HEAVY CHECK MARK}' if passed else '\N{CROSS MARK}',
-			'passed_count': 1 if passed else 0,
-			'failed_count': 0 if passed else 1
-		}
+
+		subs = dict.fromkeys(['fixture', 'passing', 'passed_count', 'failed_count'])
+		subs['fixture'] = fixture
+		subs['passing'] = '\N{CROSS MARK}'
+		subs['passed_count'] = '0'
+		subs['failed_count'] = '1'
+		if passed == 1:
+			subs['passing'] = '\N{WHITE HEAVY CHECK MARK}'
+			subs['passed_count'] = '1'
+			subs['failed_count'] = '0'
+		elif passed == 2:
+			subs['passing'] = '\N{WARNING SIGN}\N{VARIATION SELECTOR-16}'
+			subs['passed_count'] = '0.5'
+			subs['failed_count'] = '0.5'
+
 		s = st.substitute(subs)
 		return s
 
@@ -103,49 +143,84 @@ class MessageMaker:
 			delete_message_url = message_compose_url + '?' + urlencode(query_args)
 
 			sig = MessageInventory.signature(delete_message_url=delete_message_url)
-
-		return sig
+		return sig + '\n'
 
 	def _get_fake_pester(**kwargs):
 		describing_kwargs = {
-			'fixture_name': kwargs.pop('thing_kind', 'Thing'),
-			'passed': kwargs.pop('passed', False)
+			'fixture': kwargs.pop('thing_kind', 'Thing'),
+			'passed': kwargs.pop('passed', 0)
 		}
 		return MessageInventory.describing(**describing_kwargs)
 
 	@messages.register(MessageBank.code_block_needed)
-	def code_block_needed(*, signature=1, pester=True, **kwargs):
+	def code_block_needed(**kwargs):
 		sb = MessageInventory.code_block(**kwargs)
 
-		if pester:
-			sb += MessageInventory.message_break
+		if kwargs.pop('pester', False):
+			sb += MessageInventory.thematic_break
 			sb += MessageMaker._get_fake_pester(**kwargs)
+		signature = kwargs.pop('signature', 0)
 		if signature:
-			sb += MessageInventory.message_break
+			sb += MessageInventory.thematic_break
 			sb += MessageMaker._get_signature(signature, **kwargs)
 
-		sb += '\n'
 		return sb
 
 	@messages.register(MessageBank.multiline_inline_code)
-	def multiline_inline_code(*, signature=1, pester=True, **kwargs):
+	def multiline_inline_code(**kwargs):
 		sb = MessageInventory.inline_code(**kwargs)
 
-		if pester:
-			sb += MessageInventory.message_break
+		if kwargs.pop('pester', False):
+			sb += MessageInventory.thematic_break
 			sb += MessageMaker._get_fake_pester(**kwargs)
+		signature = kwargs.pop('signature', 0)
 		if signature:
-			sb += MessageInventory.message_break
+			sb += MessageInventory.thematic_break
 			sb += MessageMaker._get_signature(signature, **kwargs)
 
-		sb += '\n'
+		return sb
+
+	@messages.register(MessageBank.long_inline_code)
+	def long_inline_code(**kwargs):
+		sb = MessageInventory.long_inline_code(**kwargs)
+
+		if kwargs.pop('pester', False):
+			sb += MessageInventory.thematic_break
+			sb += MessageMaker._get_fake_pester(**kwargs)
+		signature = kwargs.pop('signature', 0)
+		if signature:
+			sb += MessageInventory.thematic_break
+			sb += MessageMaker._get_signature(signature, **kwargs)
+
+		return sb
+
+	@messages.register(MessageBank.code_fence)
+	def code_fence(**kwargs):
+		sb = MessageInventory.code_fence(**kwargs)
+
+		if kwargs.pop('pester', False):
+			sb += MessageInventory.thematic_break
+			sb += MessageMaker._get_fake_pester(**kwargs)
+		signature = kwargs.pop('signature', 0)
+		if signature:
+			sb += MessageInventory.thematic_break
+			sb += MessageMaker._get_signature(signature, **kwargs)
+
 		return sb
 
 def get_message(topic_flags, **kwargs):
-	if topic_flags & MatchBank.multiline_inline_code:
-		return messages[MessageBank.multiline_inline_code](**kwargs)
-	elif topic_flags & MatchBank.very_long_inline_code:
-		return messages[MessageBank.multiline_inline_code](**kwargs)
-	elif topic_flags & MatchBank.missing_code_block:
-		return messages[MessageBank.code_block_needed](**kwargs)
+	fence_flags = topic_flags & (MatchBank.missing_code_block | MatchBank.code_fence) \
+			== (MatchBank.missing_code_block | MatchBank.code_fence)
+	if fence_flags:
+		passed = 1 if kwargs.pop('passed', False) else 2
+		return messages[MessageBank.code_fence](passed=passed, **kwargs)
+	else:
+		passed = int(kwargs.pop('passed', False))
+		if topic_flags & MatchBank.multiline_inline_code:
+			return messages[MessageBank.multiline_inline_code](passed=passed, **kwargs)
+		elif topic_flags & MatchBank.very_long_inline_code:
+			return messages[MessageBank.long_inline_code](passed=passed, **kwargs)
+		elif topic_flags & MatchBank.missing_code_block:
+			return messages[MessageBank.code_block_needed](passed=passed, **kwargs)
+
 	return None
