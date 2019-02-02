@@ -3,7 +3,7 @@ from enum import Enum, auto
 from string import Template
 from urllib.parse import urlencode
 
-from regex_checks import MatchBank
+from regex_checks import TopicFlags
 
 class MessageRegister:
 	def __init__(self, dispatch_table=None):
@@ -40,6 +40,16 @@ If you’re on **[old.reddit.com]**, separate the code from your text with a bla
 [new.reddit.com]: ${new_reddit_permalink}
 '''
 
+	some_code_outside_of_code_block_message = '''Some of your PowerShell code isn’t wrapped in a code block.
+
+To format code correctly on **new reddit** (*[new.reddit.com]*), highlight *all lines* of code and select *‘Code Block’* in the editing toolbar.
+
+If you’re on **[old.reddit.com]**, separate the code from your text with a blank line and precede *each line* of code with **4 spaces** or a **tab**.
+
+[old.reddit.com]: ${old_reddit_permalink}
+[new.reddit.com]: ${new_reddit_permalink}
+'''
+
 	inline_code_message = '''Looks like you used *inline code* formatting where a **code block** should have been used.
 
 The inline code text styling is for use in paragraphs of text. For larger sequences of code, consider using a code block. This can be done by selecting your code then clicking the *‘Code Block’* button.
@@ -67,18 +77,21 @@ If you want those viewing from old reddit to see formatted PowerShell code then 
 
 	thematic_break = '\n---\n\n'
 
-	signature_beep_boop = '*Beep-boop. I am a bot.*'
-	signature_delete = '[Remove-Item]'
-	delete_message = (
-			'Deletion requests can only be made by the OP. A comment with replies on it cannot be removed.\n')
+	beep_boop = '*Beep-boop. I am a bot.*'
+	delete_button = '[Remove-Item]'
+	delete_message = 'Deletion requests can only be made by the OP. A comment with replies on it cannot be removed.\n'
 
 	describing_message = '''\tDescribing ${fixture}
 \t[${passing}] Demonstrates good markdown
 \tPassed: ${passed_count} Failed: ${failed_count}
 '''
 
-	def code_block(**kwargs):
-		st = Template(MessageInventory.code_block_missing_message)
+	def code_block(some=False, **kwargs):
+		st = None
+		if some:
+			st = Template(MessageInventory.some_code_outside_of_code_block_message)
+		else:
+			st = Template(MessageInventory.code_block_missing_message)
 		return st.substitute(kwargs)
 
 	def inline_code(**kwargs):
@@ -94,14 +107,14 @@ If you want those viewing from old reddit to see formatted PowerShell code then 
 		return st.substitute(kwargs)
 
 	def signature(*, delete_message_url=None, **kwargs):
-		sig_items = [MessageInventory.signature_beep_boop]
+		sig_items = [MessageInventory.beep_boop]
 		if delete_message_url:
-			sig_items.append(MessageInventory.signature_delete)
+			sig_items.append(MessageInventory.delete_button)
 
 		sb = '^(' + ' | '.join(sig_items) + ')'
 
 		if delete_message_url:
-			sb += '\n\n{}: {}'.format(MessageInventory.signature_delete, delete_message_url)
+			sb += '\n\n{}: {}'.format(MessageInventory.delete_button, delete_message_url)
 		return sb
 
 	def describing(*, fixture='Thing', passed=0, **kwargs):
@@ -132,14 +145,13 @@ class MessageMaker:
 			sig = MessageInventory.signature()
 		elif num == 2:
 			# With delete button
-			redditor = kwargs.pop('redditor')
 			reddit_url = kwargs.pop('reddit_url', 'https://www.reddit.com')
-			message_compose_url = '{}/message/compose'.format(reddit_url)
-			query_args = dict(
-				to = kwargs.pop('bot_name'),
-				subject = '!delete %s' % kwargs.pop('reply_id'),
-				message = Template(MessageInventory.delete_message).substitute(redditor=redditor)
-			)
+			message_compose_url = f'{reddit_url}/message/compose'
+			query_args = {
+				'to': kwargs.pop('bot_name'),
+				'subject': '!delete t1_%s' % kwargs.pop('reply_id'),
+				'message': MessageInventory.delete_message
+			}
 			delete_message_url = message_compose_url + '?' + urlencode(query_args)
 
 			sig = MessageInventory.signature(delete_message_url=delete_message_url)
@@ -209,18 +221,18 @@ class MessageMaker:
 		return sb
 
 def get_message(topic_flags, **kwargs):
-	fence_flags = topic_flags & (MatchBank.missing_code_block | MatchBank.code_fence) \
-			== (MatchBank.missing_code_block | MatchBank.code_fence)
+	fence_flags = topic_flags & (TopicFlags.missing_code_block | TopicFlags.code_fence) \
+			== (TopicFlags.missing_code_block | TopicFlags.code_fence)
 	if fence_flags:
 		passed = 1 if kwargs.pop('passed', False) else 2
 		return messages[MessageBank.code_fence](passed=passed, **kwargs)
 	else:
 		passed = int(kwargs.pop('passed', False))
-		if topic_flags & MatchBank.multiline_inline_code:
+		if topic_flags & TopicFlags.multiline_inline_code:
 			return messages[MessageBank.multiline_inline_code](passed=passed, **kwargs)
-		elif topic_flags & MatchBank.very_long_inline_code:
+		elif topic_flags & TopicFlags.very_long_inline_code:
 			return messages[MessageBank.long_inline_code](passed=passed, **kwargs)
-		elif topic_flags & MatchBank.missing_code_block:
+		elif topic_flags & TopicFlags.missing_code_block:
 			return messages[MessageBank.code_block_needed](passed=passed, **kwargs)
 
 	return None

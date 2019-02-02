@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
 	import re
 
-	from regex_checks import match_control
+	from regex_checks import TopicFlags, ExtraFlags, match_control
 	from messages import get_message
 	import db_services
 
@@ -87,36 +87,40 @@ def main():
 					logger.warning('Skip: already replied to: {}'.format(submission.permalink))
 					continue
 
-				b = match_control.check_all(submission.selftext)
+				match_control.check_all(submission.selftext)
+				y = match_control[ExtraFlags]
+				b = match_control[TopicFlags]
 				if b == 0:
 					logger.info('Skip: no match: {}'.format(submission.permalink))
 					continue
 
 				logger.info('Process submission: {}'.format(submission.permalink))
 
-				message = get_message(b,
-						signature=1,
-						pester=True,
-						passed=False,
-						thing_kind=type(submission).__name__,
-						redditor=submission.author.name,
-						old_reddit_permalink='https://old.reddit.com' + submission.permalink,
-						new_reddit_permalink='https://new.reddit.com' + submission.permalink)
+				message_kwargs = {
+					'topic_flags': b,
+					'signature': 1,
+					'pester': True,
+					'passed': False,
+					'some': y & ExtraFlags.contains_code_block == ExtraFlags.contains_code_block,
+					'thing_kind': type(submission).__name__,
+					'redditor': submission.author.name,
+					'old_reddit_permalink': 'https://old.reddit.com' + submission.permalink,
+					'new_reddit_permalink': 'https://new.reddit.com' + submission.permalink
+				}
+
+				message = get_message(**message_kwargs)
 				reply = submission.reply(message)
 
-				message = get_message(b,
-						signature=2,
-						pester=True,
-						passed=False,
-						thing_kind=type(submission).__name__,
-						redditor=submission.author.name,
-						bot_name=me.name,
-						reply_id=reply.id,
-						old_reddit_permalink='https://old.reddit.com' + submission.permalink,
-						new_reddit_permalink='https://new.reddit.com' + submission.permalink)
+				message_kwargs.update({
+					'signature': 2,
+					'bot_name': me.name,
+					'reply_id': reply.id
+				})
+
+				message = get_message(**message_kwargs)
 				reply.edit(message)
 
-				db_services.record_submission_reply(submission, reply, b)
+				db_services.record_submission_reply(submission, reply, b, y)
 
 			for item in reddit.inbox.stream(pause_after=-1):
 				if item is None:

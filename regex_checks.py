@@ -1,25 +1,43 @@
 
 import re
-from enum import IntEnum
+from enum import IntFlag
 
 class MatchControl:
 	def __init__(self):
 		self.match_rules = []
+		self.match_store = {}
 
 	def add(self, rule):
+		t = type(rule.tag)
+		if t not in self.match_store:
+			self.match_store[t] = 0
+
 		self.match_rules.append(rule)
 
+	def check(self, tag_type, haystack):
+		self.match_store[tag_type] = 0
+		for rule in self.match_rules:
+			if type(rule.tag) is tag_type:
+				if rule.test(haystack):
+					self.match_store[tag_type] |= rule.flag
+
 	def check_all(self, haystack):
-		b = 0
-		for m in self.match_rules:
-			if m.test(haystack):
-				b |= m.flag
-		return b
+		self.match_store = dict.fromkeys(self.match_store, 0)
+		for rule in self.match_rules:
+			if rule.test(haystack):
+				self.match_store[type(rule.tag)] |= rule.flag
+
+	def get(self, key, default=None):
+		return self.match_store.get(key, default)
+
+	def __getitem__(self, tag):
+		return self.get(tag)
 
 class MatchRule:
-	def __init__(self, name, flag, func):
-		self.name = name
-		self.flag = flag
+	def __init__(self, tag, func):
+		self.tag = tag
+		self.name = tag.name
+		self.flag = tag.value
 		self.func = func
 
 	def test(self, text):
@@ -29,9 +47,9 @@ class MatchRule:
 		return self.func(*args, **kwargs)
 
 	@classmethod
-	def create(cls, name, flag):
+	def create(cls, tag):
 		def decorator(func):
-			return cls(name=name, flag=flag, func=func)
+			return cls(tag=tag, func=func)
 		return decorator
 
 class RegexHolder:
@@ -50,21 +68,22 @@ class RegexHolder:
 
 	code_fence = re.compile(r'^```.*?\n(.*?)```', re.M | re.S)
 
-class MatchBank(IntEnum):
+	contains_code_block = re.compile(r'^(\t| {4,}).+', re.M)
+
+class TopicFlags(IntFlag):
 	missing_code_block = 1
 	multiline_inline_code = 2
 	very_long_inline_code = 4
 	code_fence = 8
 
-@MatchRule.create(
-		MatchBank.missing_code_block.name,
-		MatchBank.missing_code_block.value)
+class ExtraFlags(IntFlag):
+	contains_code_block = 1
+
+@MatchRule.create(TopicFlags.missing_code_block)
 def missing_code_block(text):
 	return bool(RegexHolder.missing_code_block.search(text))
 
-@MatchRule.create(
-		MatchBank.multiline_inline_code.name,
-		MatchBank.multiline_inline_code.value)
+@MatchRule.create(TopicFlags.multiline_inline_code)
 def multiline_inline(text):
 	if not RegexHolder.consecutive_inline_code_lines.search(text):
 		# Avoid cases like t3_abqs9c
@@ -77,9 +96,7 @@ def multiline_inline(text):
 
 	return bool(RegexHolder.missing_code_block.search(new_text))
 
-@MatchRule.create(
-		MatchBank.very_long_inline_code.name,
-		MatchBank.very_long_inline_code.value)
+@MatchRule.create(TopicFlags.very_long_inline_code)
 def long_inline_code(text):
 	span_length = None
 	for i, match in enumerate(RegexHolder.inline_code_lines.finditer(text)):
@@ -93,14 +110,17 @@ def long_inline_code(text):
 		return True
 	return False
 
-@MatchRule.create(
-		MatchBank.code_fence.name,
-		MatchBank.code_fence.value)
+@MatchRule.create(TopicFlags.code_fence)
 def code_fence_found(text):
 	return bool(RegexHolder.code_fence.search(text))
+
+@MatchRule.create(ExtraFlags.contains_code_block)
+def contains_code_block(text):
+	return bool(RegexHolder.contains_code_block.search(text))
 
 match_control = MatchControl()
 match_control.add(missing_code_block)
 match_control.add(multiline_inline)
 match_control.add(long_inline_code)
 match_control.add(code_fence_found)
+match_control.add(contains_code_block)

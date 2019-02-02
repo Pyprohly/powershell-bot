@@ -15,6 +15,7 @@ t3_reply = Table('t3_reply', metadata,
 		Column('target_created', Integer),
 		Column('topic_flags', Integer),
 		Column('previous_topic_flags', Integer),
+		Column('extra_flags', Integer),
 		Column('is_set', Boolean),
 		Column('is_ignored', Boolean),
 		Column('is_deletable', Boolean))

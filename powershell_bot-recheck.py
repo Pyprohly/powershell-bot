@@ -8,7 +8,7 @@ import logging, logging.handlers
 from pathlib import Path
 import praw, prawcore
 
-from regex_checks import match_control
+from regex_checks import TopicFlags, ExtraFlags, match_control
 from config import praw_config
 from messages import get_message
 import db_services
@@ -48,6 +48,7 @@ def main():
 				target_id = row['target_id']
 				reply_id = row['reply_id']
 				topic_flags = row['topic_flags']
+				extra_flags = row['extra_flags']
 
 				submission = reddit.submission(target_id)
 				try:
@@ -56,14 +57,12 @@ def main():
 					# This should never happen, even if the submission was deleted.
 					# Avoid processing it in future.
 					logger.warning('Skip: recorded submission not found: t3_{}'.format(target_id))
-
 					db_services.assign_is_set_0(target_id)
 					continue
 
 				if not submission.is_self:
 					# This shouldn't happen.
 					logger.warning('Note: non-is_self submission: t3_{}'.format(target_id))
-
 					db_services.assign_is_ignored_1(target_id)
 					continue
 
@@ -74,14 +73,15 @@ def main():
 						logger.info('Skip: submission was deleted: t3_{}'.format(target_id))
 					elif is_removed:
 						logger.info('Skip: submission was removed: t3_{}'.format(target_id))
-
 					db_services.assign_is_ignored_1(target_id)
 					continue
 
-				b = match_control.check_all(submission.selftext)
+				match_control.check_all(submission.selftext)
+				y = match_control[ExtraFlags]
+				b = match_control[TopicFlags]
 
-				topic_flags_changed = b != topic_flags
-				if not topic_flags_changed:
+				state_flags_change = (b != topic_flags) or (y != extra_flags)
+				if not state_flags_change:
 					logger.debug('Skip: no change: t3_{}'.format(target_id))
 					continue
 
@@ -90,13 +90,25 @@ def main():
 					my_comment.refresh()
 				except praw.exceptions.PRAWException:
 					# The comment has disappeared. It may have been deleted.
+					logger.warning(f'Warning: missing comment: t1_{reply_id}')
 					db_services.assign_is_set_0(target_id)
 					continue
 
 				if len(my_comment.replies):
 					logger.info(f'Info: found replies on comment: t1_{reply_id}')
-
 					db_services.assign_is_deletable_0(target_id)
+
+				message_kwargs = {
+					'signature': 2,
+					'pester': True,
+					'some': y & ExtraFlags.contains_code_block == ExtraFlags.contains_code_block,
+					'thing_kind': type(submission).__name__,
+					'redditor': submission.author.name,
+					'bot_name': me.name,
+					'reply_id': my_comment.id,
+					'old_reddit_permalink': 'https://old.reddit.com' + submission.permalink,
+					'new_reddit_permalink': 'https://new.reddit.com' + submission.permalink
+				}
 
 				topic_flags_0 = b == 0
 				if topic_flags_0:
@@ -117,35 +129,29 @@ def main():
 						logger.info(f'Success: delete, ninja edited: t1_{reply_id}')
 						continue
 
-					message = get_message(topic_flags,
-							signature=2,
-							pester=True,
-							passed=True,
-							thing_kind=type(submission).__name__,
-							redditor=submission.author.name,
-							bot_name=me.name,
-							reply_id=my_comment.id,
-							old_reddit_permalink='https://old.reddit.com' + submission.permalink,
-							new_reddit_permalink='https://new.reddit.com' + submission.permalink)
+					message_kwargs.update({
+						'topic_flags': topic_flags,
+						'passed': True
+					})
+
+					message = get_message(**message_kwargs)
 					my_comment.edit(message)
 					logger.info(f'Success: update comment (passing): t1_{reply_id}')
 				else:
 					# topic_flags have changed but markdown still not fixed yet.
-					message = get_message(b,
-							signature=2,
-							pester=True,
-							passed=False,
-							thing_kind=type(submission).__name__,
-							redditor=submission.author.name,
-							bot_name=me.name,
-							reply_id=my_comment.id,
-							old_reddit_permalink='https://old.reddit.com' + submission.permalink,
-							new_reddit_permalink='https://new.reddit.com' + submission.permalink)
+
+					message_kwargs.update({
+						'topic_flags': b,
+						'passed': False
+					})
+
+					message = get_message(**message_kwargs)
 					my_comment.edit(message)
 					logger.info(f'Success: update comment (failing): t1_{reply_id}')
 
 				db_services.assign_topic_flags(b, target_id)
 				db_services.assign_previous_topic_flags(topic_flags, target_id)
+				db_services.assign_extra_flags(y, target_id)
 
 			time.sleep(sleep_seconds)
 
