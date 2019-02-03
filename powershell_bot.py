@@ -189,7 +189,7 @@ def main():
 					logger.info('[Inbox] Skip: not owned: {}'.format(comment.permalink))
 					continue
 
-				by_op = item.author == author_name
+				by_op = item.author.name.lower() == author_name.lower()
 				if not by_op:
 					logger.info('[Inbox] Skip: delete not permitted: {}'.format(comment.permalink))
 					continue
