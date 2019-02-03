@@ -118,8 +118,6 @@ If you want those viewing from old reddit to see formatted PowerShell code then 
 		return sb
 
 	def describing(*, fixture='Thing', passed=0, **kwargs):
-		st = Template(MessageInventory.describing_message)
-
 		subs = dict.fromkeys(['fixture', 'passing', 'passed_count', 'failed_count'])
 		subs['fixture'] = fixture
 		subs['passing'] = '\N{CROSS MARK}'
@@ -134,8 +132,7 @@ If you want those viewing from old reddit to see formatted PowerShell code then 
 			subs['passed_count'] = '0.5'
 			subs['failed_count'] = '0.5'
 
-		s = st.substitute(subs)
-		return s
+		return Template(MessageInventory.describing_message).substitute(subs)
 
 class MessageMaker:
 	def _get_signature(num=1, **kwargs):
