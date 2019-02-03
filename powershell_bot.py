@@ -2,7 +2,7 @@
 
 """Tells redditors in /r/PowerShell to wrap their code in a code block."""
 
-if __name__ == '__main__':
+def main():
 	import os
 	import time
 	from collections import deque
@@ -15,8 +15,8 @@ if __name__ == '__main__':
 	from regex_checks import TopicFlags, ExtraFlags, match_control
 	from messages import get_message
 	import db_services
+	from config import praw_config, target_subreddits
 
-def main():
 	def process_subsmission(submission):
 		if not submission.is_self:
 			logger.info('Skip: link submission: {}'.format(submission.permalink))
@@ -203,13 +203,13 @@ def main():
 
 	ignore_inbox_items_older_than = 60 * 2 # 2 minutes
 
-	trustees = [i.lower() for i in (register['author'], praw_config['username'])]
+	trustees = [i.lower() for i in (register['owner'], praw_config['username'])]
 
-	reddit = praw.Reddit(**{k: v for k, v in praw_config.items() if v is not None})
+	reddit = praw.Reddit(**praw_config)
 	if reddit.read_only:
 		raise RuntimeError('a read-write reddit instance is required')
 	me = reddit.user.me()
-	subreddit = reddit.subreddit('+'.join(register['target_subreddits']))
+	subreddit = reddit.subreddit('+'.join(target_subreddits))
 
 	start_time = time.time()
 	__ = ['submission', 'inbox']
@@ -279,30 +279,13 @@ def main():
 
 register = {
 	'name': 'PowerShell-Bot',
+	'component': 'main',
 	'author': 'Pyprohly',
 	'owner': 'Pyprohly',
 	'version': None,
 	'description': __doc__,
-	'license': 'MIT License',
-	'target_subreddits': ['PowerShell']
+	'license': 'MIT License'
 }
-
-praw_config = {
-	'site_name': None,
-	'client_id': None,
-	'client_secret': None,
-	'username': 'PowerShell-Bot',
-	'password': None,
-	'user_agent': 'PowerShell-Bot by /u/Pyprohly'
-}
-
-try:
-	import config
-except ModuleNotFoundError:
-	pass
-else:
-	praw_config = config.praw_config
-	register['target_subreddits'] = config.subreddit_names
 
 if __name__ == '__main__':
 	try:

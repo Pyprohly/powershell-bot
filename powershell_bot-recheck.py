@@ -4,18 +4,18 @@
 
 If the post was ninja edited then just delete it."""
 
-import os
-import time
-import logging, logging.handlers
-from pathlib import Path
-import praw, prawcore
-
-from regex_checks import TopicFlags, ExtraFlags, match_control
-from config import praw_config
-from messages import get_message
-import db_services
-
 def main():
+	import os
+	import time
+	import logging, logging.handlers
+	from pathlib import Path
+	import praw, prawcore
+
+	from regex_checks import TopicFlags, ExtraFlags, match_control
+	from config import praw_config
+	from messages import get_message
+	import db_services
+
 	script_path = Path(__file__).resolve()
 	os.chdir(script_path.parent)
 
@@ -178,6 +178,16 @@ def main():
 
 		except Exception:
 			logger.error('Exception: unhandled exception:', exc_info=True)
+
+register = {
+	'name': 'PowerShell-Bot',
+	'component': 'recheck',
+	'author': 'Pyprohly',
+	'owner': 'Pyprohly',
+	'version': None,
+	'description': __doc__,
+	'license': 'MIT License'
+}
 
 if __name__ == '__main__':
 	try:
