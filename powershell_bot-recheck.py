@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-"""Go back on previous posts where the bot has replied and amend the bot's message if required.
+"""
+Go back on previous posts where the bot has replied and amend the bot's message if required.
 
-If the post was ninja edited then just delete it."""
+If the post was ninja edited then just delete it.
+"""
 
 def main():
 	import os
@@ -11,10 +13,10 @@ def main():
 	from pathlib import Path
 	import praw, prawcore
 
-	from regex_checks import TopicFlags, ExtraFlags, match_control
-	from config import praw_config
-	from messages import get_message
 	import db_services
+	from regex_checks import TopicFlags, ExtraFlags, match_control
+	from messages import get_message
+	from config import praw_config
 
 	script_path = Path(__file__).resolve()
 	os.chdir(script_path.parent)
