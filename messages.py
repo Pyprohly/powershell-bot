@@ -30,7 +30,7 @@ class MessageBank(Enum):
 	code_fence = auto()
 
 class MessageInventory:
-	code_block_missing_message = '''Looks like your PowerShell code isn’t wrapped in a code block.
+	code_outside_of_code_block_message = '''Looks like your PowerShell code isn’t wrapped in a code block.
 
 To format code correctly on **new reddit** (*[new.reddit.com]*), highlight the code and select *‘Code Block’* in the editing toolbar.
 
@@ -91,7 +91,7 @@ If you want those viewing from old reddit to see formatted PowerShell code then 
 		if some:
 			st = Template(MessageInventory.some_code_outside_of_code_block_message)
 		else:
-			st = Template(MessageInventory.code_block_missing_message)
+			st = Template(MessageInventory.code_outside_of_code_block_message)
 		return st.substitute(kwargs)
 
 	def inline_code(**kwargs):
@@ -221,8 +221,8 @@ class MessageMaker:
 		return sb
 
 def get_message(topic_flags, **kwargs):
-	fence_flags = topic_flags & (TopicFlags.missing_code_block | TopicFlags.code_fence) \
-			== (TopicFlags.missing_code_block | TopicFlags.code_fence)
+	fence_flags = topic_flags & (TopicFlags.code_outside_of_code_block | TopicFlags.code_fence) \
+			== (TopicFlags.code_outside_of_code_block | TopicFlags.code_fence)
 	if fence_flags:
 		passed = 1 if kwargs.pop('passed', False) else 2
 		return messages[MessageBank.code_fence](passed=passed, **kwargs)
@@ -232,7 +232,7 @@ def get_message(topic_flags, **kwargs):
 			return messages[MessageBank.multiline_inline_code](passed=passed, **kwargs)
 		elif topic_flags & TopicFlags.very_long_inline_code:
 			return messages[MessageBank.long_inline_code](passed=passed, **kwargs)
-		elif topic_flags & TopicFlags.missing_code_block:
+		elif topic_flags & TopicFlags.code_outside_of_code_block:
 			return messages[MessageBank.code_block_needed](passed=passed, **kwargs)
 
 	return None

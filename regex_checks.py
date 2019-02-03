@@ -53,7 +53,7 @@ class MatchRule:
 		return decorator
 
 class RegexHolder:
-	missing_code_block = re.compile((
+	code_outside_of_code_block = re.compile((
 			r'^ {0,3}('
 			r'(function|filter|workflow|class|enum) *[a-z_]\w* *\{'
 			r'|(switch|if|foreach) *\([^\)]+\) *\{'
@@ -71,7 +71,7 @@ class RegexHolder:
 	contains_code_block = re.compile(r'^(\t| {4,}).+', re.M)
 
 class TopicFlags(IntFlag):
-	missing_code_block = 1
+	code_outside_of_code_block = 1
 	multiline_inline_code = 2
 	very_long_inline_code = 4
 	code_fence = 8
@@ -79,9 +79,9 @@ class TopicFlags(IntFlag):
 class ExtraFlags(IntFlag):
 	contains_code_block = 1
 
-@MatchRule.create(TopicFlags.missing_code_block)
-def missing_code_block(text):
-	return bool(RegexHolder.missing_code_block.search(text))
+@MatchRule.create(TopicFlags.code_outside_of_code_block)
+def code_outside_of_code_block(text):
+	return bool(RegexHolder.code_outside_of_code_block.search(text))
 
 @MatchRule.create(TopicFlags.multiline_inline_code)
 def multiline_inline(text):
@@ -94,7 +94,7 @@ def multiline_inline(text):
 		# Ignore if it's just two lines
 		return False
 
-	return bool(RegexHolder.missing_code_block.search(new_text))
+	return bool(RegexHolder.code_outside_of_code_block.search(new_text))
 
 @MatchRule.create(TopicFlags.very_long_inline_code)
 def long_inline_code(text):
@@ -119,7 +119,7 @@ def contains_code_block(text):
 	return bool(RegexHolder.contains_code_block.search(text))
 
 match_control = MatchControl()
-match_control.add(missing_code_block)
+match_control.add(code_outside_of_code_block)
 match_control.add(multiline_inline)
 match_control.add(long_inline_code)
 match_control.add(code_fence_found)
