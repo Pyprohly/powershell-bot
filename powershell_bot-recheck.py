@@ -56,7 +56,7 @@ def main():
 				try:
 					submission._fetch()
 				except prawcore.exceptions.NotFound:
-					# This should never happen, even if the submission was deleted.
+					# This shouldn't happen, even if the submission was deleted.
 					# Avoid processing it in future.
 					logger.warning('Skip: recorded submission not found: t3_{}'.format(target_id))
 					db_services.assign_is_set_0(target_id)
@@ -79,8 +79,8 @@ def main():
 					continue
 
 				match_control.check_all(submission.selftext)
-				y = match_control[ExtraFlags]
 				b = match_control[TopicFlags]
+				y = match_control[ExtraFlags]
 
 				state_flags_change = (b != topic_flags) or (y != extra_flags)
 				if not state_flags_change:
