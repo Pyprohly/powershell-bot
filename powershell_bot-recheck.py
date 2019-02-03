@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-"""Update a reply message appropriately when the redditor changes their post."""
+"""Go back on previous posts where the bot has replied and amend the bot's message if required.
+
+If the post was ninja edited then just delete it."""
 
 import os
 import time

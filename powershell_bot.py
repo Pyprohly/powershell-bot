@@ -72,7 +72,7 @@ def main():
 					if submission.created_utc < start_time:
 						logger.debug('Skip: item was submitted before bot started: t3_{}'.format(submission.id))
 					else:
-						logger.debug('Skip: item was seen or timestamp was supplanted: t3_{}'.format(submission.id))
+						logger.debug('Skip: timestamp was supplanted: t3_{}'.format(submission.id))
 					continue
 				check_time['submission'] += control_checkpoint_progression(submission.created_utc - check_time['submission'])
 				seen_deque['submission'].append(submission.id)
@@ -133,13 +133,13 @@ def main():
 					if item.created_utc < start_time:
 						logger.debug('[Inbox] Skip: item was submitted before bot started: t4_{}'.format(item.id))
 					else:
-						logger.debug('[Inbox] Skip: item was seen or timestamp was supplanted: t4_{}'.format(item.id))
+						logger.debug('[Inbox] Skip: timestamp was supplanted: t4_{}'.format(item.id))
 					continue
 				check_time['inbox'] += control_checkpoint_progression(item.created_utc - check_time['inbox'])
 				seen_deque['inbox'].append(item.id)
 
 				if item.was_comment:
-					logger.info('[Inbox] Skip: ignore non-`Message` item: t4_{}'.format(item.id))
+					logger.info('[Inbox] Skip: ignore non-message item: t1_{}'.format(item.id))
 					continue
 
 				if time.time() - item.created_utc > ignore_inbox_items_older_than:
