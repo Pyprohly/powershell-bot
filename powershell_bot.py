@@ -31,7 +31,7 @@ def main():
 		rfh_config = {
 			'filename': log_file,
 			'encoding': 'utf-8',
-			'maxBytes': 5*1024*1024, # i.e., 5 megabytes
+			'maxBytes': 5*1024*1024, # 5 megabytes
 			'backupCount': 8
 		}
 		rfh = logging.handlers.RotatingFileHandler(**rfh_config)
@@ -88,8 +88,9 @@ def main():
 					continue
 
 				match_control.check_all(submission.selftext)
-				y = match_control[ExtraFlags]
 				b = match_control[TopicFlags]
+				y = match_control[ExtraFlags]
+
 				if b == 0:
 					logger.info('Skip: no match: {}'.format(submission.permalink))
 					continue
@@ -101,7 +102,7 @@ def main():
 					'signature': 1,
 					'pester': True,
 					'passed': False,
-					'some': y & ExtraFlags.contains_code_block == ExtraFlags.contains_code_block,
+					'some': bool(y & ExtraFlags.contains_code_block),
 					'thing_kind': type(submission).__name__,
 					'redditor': submission.author.name,
 					'old_reddit_permalink': 'https://old.reddit.com' + submission.permalink,

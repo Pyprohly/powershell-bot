@@ -30,7 +30,7 @@ def main():
 		rfh_config = {
 			'filename': log_file,
 			'encoding': 'utf-8',
-			'maxBytes': 5*1024*1024, # i.e., 5 megabytes
+			'maxBytes': 5*1024*1024, # 5 megabytes
 			'backupCount': 8
 		}
 		rfh = logging.handlers.RotatingFileHandler(**rfh_config)
@@ -103,7 +103,7 @@ def main():
 				message_kwargs = {
 					'signature': 2,
 					'pester': True,
-					'some': y & ExtraFlags.contains_code_block == ExtraFlags.contains_code_block,
+					'some': bool(y & ExtraFlags.contains_code_block),
 					'thing_kind': type(submission).__name__,
 					'redditor': submission.author.name,
 					'bot_name': me.name,
