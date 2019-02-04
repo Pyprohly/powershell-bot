@@ -10,16 +10,17 @@ def main():
 	from pathlib import Path
 	import praw, prawcore
 
+	from reddit import reddit
 	from strategy import process_subsmission, process_inbox_item
-	from config import praw_config, target_subreddits
+	from config import target_subreddits
 
 	script_path = Path(__file__).resolve()
 	os.chdir(script_path.parent)
 
 	logger = logging.getLogger(__name__)
-	#logger.disabled = True
 	logger.setLevel(logging.INFO)
 	#logger.addHandler(logging.StreamHandler())
+	#logger.disabled = True
 
 	log_file = script_path.parent / 'log' / script_path.with_suffix('.log').name
 	if log_file.parent.is_dir():
@@ -36,9 +37,9 @@ def main():
 
 		logger.info('Log ({}): {}'.format(logger.name, log_file.absolute()))
 
-	reddit = praw.Reddit(**praw_config)
 	if reddit.read_only:
 		raise RuntimeError('a read-write reddit instance is required')
+
 	subreddit = reddit.subreddit('+'.join(target_subreddits))
 
 	start_time = time.time()

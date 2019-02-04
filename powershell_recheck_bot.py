@@ -13,18 +13,18 @@ def main():
 	from pathlib import Path
 	import praw, prawcore
 
+	from reddit import reddit
 	import db_services
 	from regex_checks import TopicFlags, ExtraFlags, match_control
 	from messages import get_message
-	from config import praw_config
 
 	script_path = Path(__file__).resolve()
 	os.chdir(script_path.parent)
 
 	logger = logging.getLogger(__name__)
-	#logger.disabled = True
 	logger.setLevel(logging.INFO)
 	#logger.addHandler(logging.StreamHandler())
+	#logger.disabled = True
 
 	log_file = script_path.parent / 'log' / script_path.with_suffix('.log').name
 	if log_file.parent.is_dir():
@@ -41,7 +41,6 @@ def main():
 
 		logger.info('Log ({}): {}'.format(logger.name, log_file.absolute()))
 
-	reddit = praw.Reddit(**praw_config)
 	me = reddit.user.me()
 
 	sleep_seconds = 30
@@ -53,6 +52,8 @@ def main():
 				reply_id = row['reply_id']
 				topic_flags = row['topic_flags']
 				extra_flags = row['extra_flags']
+
+				logger.debug(f'Recheck: t1_{reply_id} targeting t3_{target_id}')
 
 				submission = reddit.submission(target_id)
 				try:

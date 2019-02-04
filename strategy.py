@@ -6,19 +6,19 @@ from pathlib import Path
 import re
 import praw, prawcore
 
+from reddit import reddit
 import db_services
 from regex_checks import TopicFlags, ExtraFlags, match_control
 from messages import get_message
-from config import praw_config
 from powershell_bot import register
 
 script_path = Path(__file__).resolve()
 os.chdir(script_path.parent)
 
 logger = logging.getLogger(__name__)
-#logger.disabled = True
 logger.setLevel(logging.INFO)
 #logger.addHandler(logging.StreamHandler())
+#logger.disabled = True
 
 log_file = script_path.parent / 'log' / 'powershell_bot.log'
 if log_file.parent.is_dir():
@@ -43,12 +43,11 @@ recheck_regexp = re.compile(recheck_command_pattern, re.I)
 
 ignore_inbox_items_older_than = 60 * 2 # 2 minutes
 
-trustees = [i.lower() for i in (register['owner'], praw_config['username'])]
-
-reddit = praw.Reddit(**praw_config)
 me = reddit.user.me()
 if me is None:
-	raise RuntimeError('redditor instance is required')
+	raise RuntimeError('user authentication required')
+
+trustees = [i.lower() for i in (register['owner'], me.name)]
 
 def process_subsmission(submission):
 	if not submission.is_self:
