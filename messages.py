@@ -135,7 +135,7 @@ If you want those viewing from old reddit to see formatted PowerShell code then 
 		return Template(MessageInventory.describing_message).substitute(subs)
 
 class MessageMaker:
-	def _get_signature(num=1, **kwargs):
+	def _signature(num=1, **kwargs):
 		sig = ''
 		if num == 1:
 			# Basic signature
@@ -154,67 +154,46 @@ class MessageMaker:
 			sig = MessageInventory.signature(delete_message_url=delete_message_url)
 		return sig + '\n'
 
-	def _get_fake_pester(**kwargs):
+	def _fake_pester(**kwargs):
 		describing_kwargs = {
 			'fixture': kwargs.pop('thing_kind', 'Thing'),
 			'passed': kwargs.pop('passed', 0)
 		}
 		return MessageInventory.describing(**describing_kwargs)
 
-	@messages.register(MessageBank.code_block_needed)
-	def code_block_needed(**kwargs):
-		sb = MessageInventory.code_block(**kwargs)
-
+	def _subsidiaries(**kwargs):
+		sb = ''
 		if kwargs.pop('pester', False):
 			sb += MessageInventory.thematic_break
-			sb += MessageMaker._get_fake_pester(**kwargs)
+			sb += MessageMaker._fake_pester(**kwargs)
 		signature = kwargs.pop('signature', 0)
 		if signature:
 			sb += MessageInventory.thematic_break
-			sb += MessageMaker._get_signature(signature, **kwargs)
+			sb += MessageMaker._signature(signature, **kwargs)
+		return sb
 
+	@messages.register(MessageBank.code_block_needed)
+	def code_block_needed(**kwargs):
+		sb = MessageInventory.code_block(**kwargs)
+		sb += MessageMaker._subsidiaries(**kwargs)
 		return sb
 
 	@messages.register(MessageBank.multiline_inline_code)
 	def multiline_inline_code(**kwargs):
 		sb = MessageInventory.inline_code(**kwargs)
-
-		if kwargs.pop('pester', False):
-			sb += MessageInventory.thematic_break
-			sb += MessageMaker._get_fake_pester(**kwargs)
-		signature = kwargs.pop('signature', 0)
-		if signature:
-			sb += MessageInventory.thematic_break
-			sb += MessageMaker._get_signature(signature, **kwargs)
-
+		sb += MessageMaker._subsidiaries(**kwargs)
 		return sb
 
 	@messages.register(MessageBank.long_inline_code)
 	def long_inline_code(**kwargs):
 		sb = MessageInventory.long_inline_code(**kwargs)
-
-		if kwargs.pop('pester', False):
-			sb += MessageInventory.thematic_break
-			sb += MessageMaker._get_fake_pester(**kwargs)
-		signature = kwargs.pop('signature', 0)
-		if signature:
-			sb += MessageInventory.thematic_break
-			sb += MessageMaker._get_signature(signature, **kwargs)
-
+		sb += MessageMaker._subsidiaries(**kwargs)
 		return sb
 
 	@messages.register(MessageBank.code_fence)
 	def code_fence(**kwargs):
 		sb = MessageInventory.code_fence(**kwargs)
-
-		if kwargs.pop('pester', False):
-			sb += MessageInventory.thematic_break
-			sb += MessageMaker._get_fake_pester(**kwargs)
-		signature = kwargs.pop('signature', 0)
-		if signature:
-			sb += MessageInventory.thematic_break
-			sb += MessageMaker._get_signature(signature, **kwargs)
-
+		sb += MessageMaker._subsidiaries(**kwargs)
 		return sb
 
 def get_message(topic_flags, **kwargs):
