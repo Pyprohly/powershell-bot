@@ -5,4 +5,4 @@ from subprocess import Popen
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 Popen((sys.executable, 'powershell_bot.py'))
-Popen((sys.executable, 'powershell_bot-recheck.py'))
+Popen((sys.executable, 'powershell_recheck_bot.py'))
