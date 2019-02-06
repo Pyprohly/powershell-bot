@@ -55,10 +55,12 @@ class MatchRule:
 class RegexHolder:
 	code_outside_of_code_block = re.compile((
 			r'^ {0,3}('
-			r'(function|filter|workflow|class|enum) *[a-z_]\w* *\{'
-			r'|(switch|if|foreach) *\([^\)]+\) *\{'
+			r'(function|filter|workflow|class|enum) *[a-z_]\w* *\n?{'
+			r'|(if|switch) *\((?=.*\$).+\) *\n?{ *'
+			r'|foreach *\((?=.*\$)(?=.*in).+\) *\n?{'
+			r'|for *\((?=[^;]*\$).*;(?=[^;]*-\w\w\b).*;.*\) *\n?{ *'
 			r'|param *\('
-			r'|process *\{'
+			r'|process *\n?{'
 			r'''|(PS [A-Z]:\\[-\w\\]*> )?\w{3,}-\w{2,} (-?\w+|@?'|@?"|\$[a-z]|[A-Z]:\\|\| *\w)'''
 			r'|\$[a-z_]\w* *[=\|]'
 			r')'), re.I | re.M)
