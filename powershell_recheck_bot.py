@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-Go back on previous posts where the bot has replied and amend the bot's message if required.
-
-If the post was ninja edited then just delete it.
-"""
+"""Go back on previous posts where the bot has replied and amend the bot's message if needed."""
 
 def main():
 	import os
@@ -118,21 +114,6 @@ def main():
 				topic_flags_0 = b == 0
 				if topic_flags_0:
 					# The author has fixed their post. Success!
-
-					if time.time() - submission.created_utc < 60 * 3:
-						# If they've ninja edited then just delete the post.
-
-						if len(my_comment.replies):
-							logger.info(f'Skip: ninja edited, but there are replies: t1_{reply_id}')
-							continue
-						if not db_services.is_deletable(reply_id):
-							logger.info(f'Skip: ninja edited, but not deletable: t1_{reply_id}')
-							continue
-
-						my_comment.delete()
-						db_services.assign_is_set_0(target_id)
-						logger.info(f'Success: delete, ninja edited: t1_{reply_id}')
-						continue
 
 					message_kwargs.update({
 						'topic_flags': topic_flags,
