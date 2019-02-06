@@ -173,6 +173,7 @@ def process_inbox_item(item):
 
 		comment.delete()
 		db_services.assign_is_set_0(target_id)
+		db_services.assign_is_ignored_1(target_id)
 
 		logger.info('[Inbox] Success: deleted: {}'.format(comment.permalink))
 
