@@ -97,6 +97,8 @@ def process_subsmission(submission):
 	db_services.record_submission_reply(submission, reply, b, y)
 
 def process_inbox_item(item):
+	logger.info('[Inbox] Process: inbox item, deletion request (from /u/{}): t4_{}'.format(item.author.name, item.id))
+
 	if item.was_comment:
 		logger.info('[Inbox] Skip: ignore non-message item: t1_{}'.format(item.id))
 		return
@@ -118,7 +120,7 @@ def process_inbox_item(item):
 		thing_kind = delete_match.group(1)
 		comment_id = delete_match.group(2)
 
-		logger.info('[Inbox] Process: inbox item, deletion request (from /u/{}): t4_{}'.format(item.author.name, item.id))
+		logger.info('[Inbox] Info: deletion request (from /u/{}): "t1_{}"'.format(item.author.name, comment_id))
 
 		if thing_kind is not None:
 			if thing_kind != 't1':
