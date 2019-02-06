@@ -63,7 +63,7 @@ def main():
 
 				if not submission.is_self:
 					# This shouldn't happen.
-					logger.warning('Note: non-is_self submission: t3_{}'.format(target_id))
+					logger.warning('Note: non-is_self submission: {}-{}'.format(target_id, reply_id))
 					db_services.assign_is_ignored_1(target_id)
 					continue
 
@@ -71,9 +71,9 @@ def main():
 				is_removed = submission.selftext == '[removed]'
 				if is_deleted or is_removed:
 					if is_deleted:
-						logger.info('Skip: submission was deleted: t3_{}'.format(target_id))
+						logger.info('Skip: submission was deleted: {}-{}'.format(target_id, reply_id))
 					elif is_removed:
-						logger.info('Skip: submission was removed: t3_{}'.format(target_id))
+						logger.info('Skip: submission was removed: {}-{}'.format(target_id, reply_id))
 					db_services.assign_is_ignored_1(target_id)
 					continue
 
@@ -83,7 +83,7 @@ def main():
 
 				state_flags_change = (b != topic_flags) or (y != extra_flags)
 				if not state_flags_change:
-					logger.debug('Skip: no change: t3_{}'.format(target_id))
+					logger.debug('Skip: no change: {}-{}'.format(target_id, reply_id))
 					continue
 
 				my_comment = reddit.comment(reply_id)
@@ -91,12 +91,12 @@ def main():
 					my_comment.refresh()
 				except praw.exceptions.PRAWException:
 					# The comment has disappeared. It may have been deleted.
-					logger.warning(f'Warning: missing comment: t1_{reply_id}')
+					logger.warning(f'Warning: missing comment: {target_id}-{reply_id}')
 					db_services.assign_is_set_0(target_id)
 					continue
 
 				if len(my_comment.replies):
-					logger.info(f'Info: found replies on comment: t1_{reply_id}')
+					logger.info(f'Info: found replies on comment: {target_id}-{reply_id}')
 					db_services.assign_is_deletable_0(target_id)
 
 				message_kwargs = {
@@ -122,7 +122,7 @@ def main():
 
 					message = get_message(**message_kwargs)
 					my_comment.edit(message)
-					logger.info(f'Success: update comment (passing): t1_{reply_id}')
+					logger.info(f'Success: update comment (passing): {target_id}-{reply_id}')
 				else:
 					# topic_flags have changed but markdown still not fixed yet.
 
@@ -133,7 +133,7 @@ def main():
 
 					message = get_message(**message_kwargs)
 					my_comment.edit(message)
-					logger.info(f'Success: update comment (failing): t1_{reply_id}')
+					logger.info(f'Success: update comment (failing): {target_id}-{reply_id}')
 
 				db_services.assign_topic_flags(b, target_id)
 				db_services.assign_previous_topic_flags(topic_flags, target_id)

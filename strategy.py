@@ -115,15 +115,19 @@ def process_inbox_item(item):
 	item.mark_read()
 
 	if delete_match:
-		logger.info('[Inbox] Process: inbox item, deletion request (from /u/{}): t4_{}'.format(item.author.name, item.id))
-
 		thing_kind = delete_match.group(1)
 		comment_id = delete_match.group(2)
 
+		logger.info('[Inbox] Process: inbox item, deletion request (from /u/{}): t4_{}'.format(item.author.name, item.id))
+
 		if thing_kind is not None:
 			if thing_kind != 't1':
-				logger.info(f"[Inbox] Skip: not the kind we're looking for: {thing_kind}{comment_id}")
+				logger.info(f"[Inbox] Skip: not the kind we're looking for: {thing_kind}_{comment_id}")
 				return
+
+		target_id = db_services.get_target_id(comment_id)
+		if target_id is None:
+			logger.warning('[Inbox] Warning: could not resolve target_id "{}" from comment: t1_{}'.format(target_id, comment_id))
 
 		comment = reddit.comment(comment_id)
 		try:
@@ -132,10 +136,6 @@ def process_inbox_item(item):
 			logger.info('[Inbox] Skip: not found: t1_{}'.format(comment_id))
 			return
 
-		target_id = db_services.get_target_id(comment_id)
-		if target_id is None:
-			logger.warning('[Inbox] Warning: could not resolve target_id from comment: t1_{}'.format(comment_id))
-
 		by_authority = item.author.name.lower() in trustees
 		if by_authority:
 			comment.delete()
@@ -143,56 +143,57 @@ def process_inbox_item(item):
 			if target_id is not None:
 				db_services.assign_is_set_0(target_id)
 
-			logger.info('[Inbox] Success: force delete: {}'.format(comment.permalink))
+			logger.info('[Inbox] Success: force delete: {}-{}'.format(target_id, comment_id))
 			return
 
 		if target_id is None:
-			logger.warning('[Inbox] Skip: cannot resolve author_name from null target_id: t1_{}'.format(comment_id))
+			logger.warning('[Inbox] Skip: cannot resolve author_name from null target_id: {}-{}'.format(target_id, comment_id))
+			return
 
 		author_name = db_services.get_author_name(target_id)
 		if author_name is None:
-			logger.warning('[Inbox] Skip: could not resolve author_name from target_id: t1_{}'.format(comment_id))
+			logger.warning('[Inbox] Skip: could not resolve author_name from target_id: {}-{}'.format(target_id, comment_id))
 			return
 
 		if comment.author != me:
-			logger.info('[Inbox] Skip: not owned: {}'.format(comment.permalink))
+			logger.info('[Inbox] Skip: not owned: {}-{}'.format(target_id, comment_id))
 			return
 
 		by_op = item.author.name.lower() == author_name.lower()
 		if not by_op:
-			logger.info('[Inbox] Skip: delete not permitted: {}'.format(comment.permalink))
+			logger.info('[Inbox] Skip: delete not permitted: {}-{}'.format(target_id, comment_id))
 			return
 
 		if len(comment.replies):
-			logger.info('[Inbox] Skip: has replies: {}'.format(comment.permalink))
+			logger.info('[Inbox] Skip: has replies: {}-{}'.format(target_id, comment_id))
 			return
 
 		if not db_services.is_deletable(comment_id):
-			logger.info('[Inbox] Skip: not deletable: {}'.format(comment.permalink))
+			logger.info('[Inbox] Skip: not deletable: {}-{}'.format(target_id, comment_id))
 			return
 
 		comment.delete()
 		db_services.assign_is_set_0(target_id)
 		db_services.assign_is_ignored_1(target_id)
 
-		logger.info('[Inbox] Success: deleted: {}'.format(comment.permalink))
+		logger.info('[Inbox] Success: deleted: {}-{}'.format(target_id, comment_id))
 
 	elif recheck_match:
 		logger.info('[Inbox] Process: inbox item, recheck request (from /u/{}): t4_{}'.format(item.author.name, item.id))
 
 		by_authority = item.author.name.lower() in trustees
 		if not by_authority:
-			logger.info('[Inbox] Skip: not permitted: {}'.format(comment.permalink))
+			logger.info('[Inbox] Skip: unauthorised: t4_{}'.format(item.id))
 			return
 
 		thing_kind = recheck_match.group(1)
 		thing_id = recheck_match.group(2)
 
 		if thing_kind is None:
-			logger.info('[Inbox] Skip: thing_kind was not specified: {thing_kind}{thing_id}')
+			logger.info('[Inbox] Skip: thing_kind was not specified: {thing_kind}_{thing_id}')
 			return
 		if thing_kind != 't3':
-			logger.info(f"[Inbox] Skip: not the kind we're looking for: {thing_kind}{thing_id}")
+			logger.info(f"[Inbox] Skip: not the kind we're looking for: {thing_kind}_{thing_id}")
 			return
 
 		submission = reddit.submission(thing_id)
