@@ -161,8 +161,8 @@ def process_inbox_item(item):
 			logger.info('[Inbox] Skip: not owned: {}-{}'.format(target_id, comment_id))
 			return
 
-		by_op = item.author.name.lower() == author_name.lower()
-		if not by_op:
+		by_submitter = item.author.name.lower() == author_name.lower()
+		if not by_submitter:
 			logger.info('[Inbox] Skip: delete not permitted: {}-{}'.format(target_id, comment_id))
 			return
 
