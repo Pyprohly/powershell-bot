@@ -103,7 +103,7 @@ def main():
 					'signature': 2,
 					'pester': True,
 					'some': bool(y & ExtraFlags.contains_code_block),
-					'thing_kind': type(submission).__name__,
+					'kind': type(submission).__name__,
 					'redditor': submission.author.name,
 					'bot_name': me.name,
 					'reply_id': my_comment.id,

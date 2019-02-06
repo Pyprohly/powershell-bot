@@ -156,7 +156,7 @@ class MessageMaker:
 
 	def _fake_pester(**kwargs):
 		describing_kwargs = {
-			'fixture': kwargs.pop('thing_kind', 'Thing'),
+			'fixture': kwargs.pop('kind', 'Thing'),
 			'passed': kwargs.pop('passed', 0)
 		}
 		return MessageInventory.describing(**describing_kwargs)
