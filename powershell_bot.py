@@ -17,6 +17,26 @@ def main():
 	script_path = Path(__file__).resolve()
 	os.chdir(script_path.parent)
 
+
+	prawcore_logger = logging.getLogger('prawcore')
+	prawcore_logger.setLevel(logging.DEBUG)
+
+	log_file = script_path.parent / 'log' / 'prawcore.log'
+	if log_file.parent.is_dir():
+		log_format = '%(asctime)s %(levelname)s %(funcName)s:%(lineno)d | %(message)s'
+		rfh_config = {
+			'filename': log_file,
+			'encoding': 'utf-8',
+			'maxBytes': 5*1024*1024, # 5 megabytes
+			'backupCount': 8
+		}
+		rfh = logging.handlers.RotatingFileHandler(**rfh_config)
+		rfh.setFormatter(logging.Formatter(log_format))
+		prawcore_logger.addHandler(rfh)
+
+		prawcore_logger.info('Log ({}): {}'.format(prawcore_logger.name, log_file.absolute()))
+
+
 	logger = logging.getLogger(__name__)
 	logger.setLevel(logging.INFO)
 	#logger.addHandler(logging.StreamHandler())
