@@ -20,6 +20,7 @@ def main():
 
 	prawcore_logger = logging.getLogger('prawcore')
 	prawcore_logger.setLevel(logging.DEBUG)
+	prawcore_logger.disabled = True
 
 	log_file = script_path.parent / 'log' / 'prawcore.log'
 	if log_file.parent.is_dir():
