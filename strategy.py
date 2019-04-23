@@ -35,7 +35,7 @@ if log_file.parent.is_dir():
 
 	logger.info('Log ({}): {}'.format(logger.name, log_file.absolute()))
 
-delete_command_pattern = r'^!delete +(?:(t1)_)?([a-z0-9]{1,12})$'
+delete_command_pattern = r'^!delete(?: |\+)+(?:(t1)_)?([a-z0-9]{1,12})$'
 delete_regexp = re.compile(delete_command_pattern, re.I)
 
 recheck_command_pattern = r'^!recheck +(?:(t[1-6])_)?([a-z0-9]{1,12})$'
