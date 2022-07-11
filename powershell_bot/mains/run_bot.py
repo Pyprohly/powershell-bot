@@ -356,7 +356,7 @@ async def main(*, debug: bool = False) -> None:
                     continue
 
                 try:
-                    await client.p.comment.reply(mesg.comment.id, reply_text + "\n\n&thinsp;^(*Beep-boop.*)")
+                    await client.p.comment.reply(mesg.comment.id, reply_text + "\n\n&thinsp;^^^(*Beep-boop.*)")
                 except Exception:
                     logger.error('Failed to reply to comment after NLP text generation', exc_info=True)
                     continue
@@ -452,7 +452,7 @@ async def main(*, debug: bool = False) -> None:
                 logger.info('Replying to comment: %s', mesg.comment.id)
 
                 try:
-                    await client.p.comment.reply(mesg.comment.id, "Good human.\n\n&thinsp;^(*Beep-boop.*)")
+                    await client.p.comment.reply(mesg.comment.id, "Good human.\n\n&thinsp;^^^(*Beep-boop.*)")
                 except Exception:
                     logger.error('Failed to reply to comment', exc_info=True)
                     return
