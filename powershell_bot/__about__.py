@@ -1,7 +1,7 @@
 
 version_major: int = 2
 version_minor: int = 0
-version_micro: int = 3
+version_micro: int = 4
 version_extra: str = ''
 
 version_patch: int = version_micro

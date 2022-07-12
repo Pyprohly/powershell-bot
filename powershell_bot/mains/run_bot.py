@@ -323,7 +323,8 @@ async def main(*, debug: bool = False) -> None:
 
     #region
 
-    delete_commend_regex = re.compile(r"^!delete +([a-z0-9]{1,12}) *$", re.I)
+    delete_command_regex = re.compile(r"^!delete +([a-z0-9]{1,12}) *$", re.I)
+    ping_command_regex = re.compile(r"^!ping *$", re.I)
 
     good_being_regex = re.compile(r"^Good (\w+)\.?$", re.I)
 
@@ -374,7 +375,21 @@ async def main(*, debug: bool = False) -> None:
         if isinstance(mesg, ComposedMessage):
             logger.info('Composed message received from u/%s', mesg.author_name)
 
-            m = delete_commend_regex.match(mesg.subject)
+            m = ping_command_regex.match(mesg.subject)
+            if m:
+                logger.info('Ping')
+                try:
+                    await client.p.message.send(
+                        mesg.author_name,
+                        're: ' + mesg.subject,
+                        'pong',
+                    )
+                except Exception:
+                    logger.error('Failed to return ping: %s', to_base36(mesg.id), exc_info=True)
+                return
+
+
+            m = delete_command_regex.match(mesg.subject)
             if m is None:
                 logger.info('Message is not a deletion request')
                 return
