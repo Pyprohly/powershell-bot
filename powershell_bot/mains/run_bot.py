@@ -304,9 +304,7 @@ async def main(*, debug: bool = False) -> None:
                     await process_recheck_submission_row(conn, row)
 
                     last_response = client.http.last.response
-                    if last_response is None:
-                        raise Exception
-                    if not last_response.status_successful():
+                    if last_response is None or not last_response.status_successful():
                         cycle_error_count += 1
 
             successful = True
