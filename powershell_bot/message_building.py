@@ -44,7 +44,8 @@ a blank line gap and precede each line of code with **4 spaces** or a **tab**.
 It appears that you have used *inline code* formatting when a **code block**
 should have been used.
 
-Fix the code formatting by highlighting your code then clicking the *‘Code Block’*
+Consider using a code block for longer sequences of code.
+To correct the formatting, highlight your code then click the ‘Code Block’
 button in the editing toolbar.
 '''
     multiline_inline_code_template = Template(multiline_inline_code_message)
@@ -109,9 +110,11 @@ def build_footer_message_part(submission_id: int, reddit_user_name: str) -> str:
     submission_id36 = to_base36(submission_id)
     message = '''\
 Click ‘send’ to immediately delete the bot’s comment.
-You must be the submitter of the submission for the deletion to succeed.
 
-Note, the bot’s comment will not be deleted if there are any replies on it.
+The bot’s comment will not be deleted if:
+
+* You are not the submitter of the submission.
+* There are any replies on the bot’s comment.
 '''
     query_params = {
         'to': reddit_user_name,
