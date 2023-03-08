@@ -5,10 +5,11 @@ This is the repository for [u/PowerShell-Bot].
 
 [u/PowerShell-Bot]: https://www.reddit.com/u/PowerShell-Bot
 
-The goal of the bot is to teach Redditors on the [r/PowerShell] subreddit how to
-properly format their code in their submission text by using code blocks. When the
-submission author fixes their submission the bot notices and modifies its comment
-reply accordingly.
+The purpose of the bot is to teach Redditors on [r/PowerShell] how to
+properly format code in their submissions using code blocks.
+
+When the submission author fixes their submission the bot notices and modifies its
+comment reply accordingly.
 
 [r/PowerShell]: https://www.reddit.com/r/PowerShell
 
@@ -19,24 +20,6 @@ and putting together the [original regex to detect PowerShell code snippets][sub
 [vexx32]: https://github.com/vexx32
 [u/Lee_Dailey]: https://www.reddit.com/u/Lee_Dailey
 [subm_8jz1rn]: https://www.reddit.com/r/PowerShell/comments/8jz1rn/meta_regex_to_detect_common_ps_code_snippets/
-
-The bot was originally created by me in 2019 and ran for the majority of that year. The
-bot performed well and received excellent feedback but I decided to switch it off when
-summer arrived because the Raspberry Pi became too hot. Ultimately though I was
-unsatisfied with the quality of the codebase: the bot’s logic was difficult to follow and
-it didn’t set a good example of how to write a good Reddit bot. I also found PRAW, the
-Python Reddit API Wrapper package, to be annoying to work with, so I created RedditWarp,
-a new Reddit API library. I’ve completely rewritten the bot in 2022 using this new
-library, and the codebase is now much more comprehensible.
-
-This is the first ever bot built using the [RedditWarp][RedditWarp PyPI] library.
-This codebase is a good demonstration of how to use the library to create a bot.
-The codebase features a variety of techniques and tools, such as asynchronous
-programming, signal handling, logging, messaging queues, loading from configuration
-files, SQL (via SQLAlchemy), and a command line interface to start the bot or invoke
-various related functions.
-
-[RedditWarp PyPI]: https://pypi.org/project/redditwarp/
 
 ### Instructions
 
@@ -66,10 +49,14 @@ shown in the repo and they should be created prior to running the bot.
 
     * `database_url`: The database URL for SQLAlchemy to connect to.
 
-    * `reddit_user_name`: The name of the Reddit account this bot will run on. Case sensitive.
+    * `username`: The name of the Reddit account this bot will run on. Case sensitive.
         The name is used as the section name to access credentials for in the `praw.ini` file.
         It must be an exact match to the section name in the `praw.ini` file and to the
         account name this bot will run on on Reddit.
+
+        Also used for the online presence indicator feature.
+
+    * `password`: Password of the bot account. This is required for the online presence indicator feature.
 
     * `target_subreddit_name`: The subreddit name in which this bot will run on. Case insensitive.
 
@@ -90,6 +77,6 @@ shown in the repo and they should be created prior to running the bot.
 
 * `praw.ini`
 
-    Must contain a section name that matches the value of the `reddit_user_name` configuration
+    Must contain a section name that matches the value of the `username` configuration
     in the  `powershell_bot.ini` file. The credentials in this section are used to instantiate
     the RedditWarp client.

@@ -3,19 +3,19 @@ import sys
 import asyncio
 from configparser import ConfigParser
 
-import redditwarp
+import redditwarp.SYNC
 from redditwarp.models.submission_SYNC import TextPost
 
 from ..feature_extraction import extract_features
 from ..message_building import get_message_determiner, build_message
 
-async def main(idn: int) -> None:
+async def invoke(idn: int) -> None:
     config = ConfigParser()
     config.read('powershell_bot.ini')
     section = config[config.default_section]
-    reddit_user_name = section['reddit_user_name']
+    username = section['username']
 
-    client = redditwarp.SYNC.Client.from_praw_config(reddit_user_name)
+    client = redditwarp.SYNC.Client.from_praw_config(username)
 
     subm = client.p.submission.get(idn)
     if subm is None:
@@ -36,12 +36,13 @@ async def main(idn: int) -> None:
         msg = build_message(
             determiner=det,
             submission_id=idn,
-            rel_permalink=subm.rel_permalink,
+            permalink_path=subm.permalink_path,
             enlightened=False,
-            reddit_user_name=reddit_user_name,
+            username=username,
+            submission_body_len=len(subm.body),
         )
         print()
         print(msg)
 
-def run_test_one(idn: int) -> None:
-    asyncio.run(main(idn))
+def run_invoke(idn: int) -> None:
+    asyncio.run(invoke(idn))

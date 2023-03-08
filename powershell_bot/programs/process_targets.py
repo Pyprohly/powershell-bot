@@ -5,7 +5,7 @@ import sys
 import asyncio
 from configparser import ConfigParser
 
-import redditwarp
+import redditwarp.ASYNC
 from redditwarp.models.submission_ASYNC import TextPost
 from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import create_async_engine as create_engine
@@ -14,17 +14,17 @@ from ..database_schema import record_table
 from ..feature_extraction import extract_features
 from ..message_building import get_message_determiner, build_message
 
-async def main(submission_id36s: Iterable[str]) -> None:
+async def invoke(submission_id36s: Iterable[str]) -> None:
     config = ConfigParser()
     config.read('powershell_bot.ini')
     section = config[config.default_section]
     database_url = section['database_url']
-    reddit_user_name = section['reddit_user_name']
+    username = section['username']
     target_subreddit_name = section['target_subreddit_name']
 
-    engine = create_engine(database_url, future=True)
+    engine = create_engine(database_url)
 
-    client = redditwarp.ASYNC.Client.from_praw_config(reddit_user_name)
+    client = redditwarp.ASYNC.Client.from_praw_config(username)
 
     for submission_id36 in submission_id36s:
         subm = await client.p.submission.fetch(int(submission_id36, 36))
@@ -51,10 +51,11 @@ async def main(submission_id36s: Iterable[str]) -> None:
 
         message = build_message(
             determiner=det,
-            submission_id=subm.id,
-            rel_permalink=subm.rel_permalink,
             enlightened=False,
-            reddit_user_name=reddit_user_name,
+            submission_id=subm.id,
+            permalink_path=subm.permalink_path,
+            username=username,
+            submission_body_len=len(subm.body),
         )
         try:
             comm = await client.p.submission.reply(subm.id, message)
@@ -70,14 +71,11 @@ async def main(submission_id36s: Iterable[str]) -> None:
                     'recheck': True,
                     'target_submission_id': subm.id,
                     'target_submission_created_ut': subm.created_ut,
-                    'target_submission_author_name': subm.author_name,
+                    'target_submission_author_name': subm.author_display_name,
                     'bot_comment_id': comm.id,
                 },
             )
             await conn.commit()
 
-def process_targets(submission_id36s: Iterable[str]) -> None:
-    asyncio.run(main(submission_id36s))
-
-def process_target(submission_id36: str) -> None:
-    process_targets([submission_id36])
+def run_invoke(submission_id36s: Iterable[str]) -> None:
+    asyncio.run(invoke(submission_id36s))

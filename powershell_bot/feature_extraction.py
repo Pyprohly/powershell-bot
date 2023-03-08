@@ -46,6 +46,7 @@ def register(flag: int, func: Optional[Callable[[str], bool]] = None) -> Union[C
     feature_flags_registry[flag] = func
     return None
 
+
 @register(FeatureFlags.CODE_BLOCK)
 def _(text: str) -> bool:
     return bool(RegexStaticNamespace.code_block.search(text))
